@@ -49,19 +49,20 @@ func (listener upgradeListener) Write(p []byte) (n int, err error) {
 		binPath, err := bootstrapBinary(name, "", false)
 		if err != nil {
 			info := matches[2]
-			src := info
+			configFile := filepath.Join(getDataDir(), "upgrades",
+				fmt.Sprintf("%s.yaml", url.PathEscape(name)))
 			if _, err := url.Parse(string(info)); err == nil {
-				filename := filepath.Join(getDataDir(), "upgrades",
-						fmt.Sprintf("%s.yaml", url.PathEscape(name)))
-				err = getter.GetFile(filename, string(info))
+				err = getter.GetFile(configFile, string(info))
 				if err != nil {
-                    contents, err := ioutil.ReadFile(filename)
-                    if err != nil {
-                    	src = contents
-					}
+					panic(err)
+				}
+			} else {
+				err = ioutil.WriteFile(configFile, info, 0644)
+				if err != nil {
+					panic(err)
 				}
 			}
-			binPath, err = processUpgradeConfig(name, src)
+			binPath, err = processUpgradeConfig(name, configFile)
 			if err != nil {
 				panic(err)
 			}
@@ -71,9 +72,13 @@ func (listener upgradeListener) Write(p []byte) (n int, err error) {
 	return listener.writer.Write(p)
 }
 
-func processUpgradeConfig(upgradeName string, src []byte) (string, error) {
+func processUpgradeConfig(upgradeName, configFile string) (string, error) {
+	src, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return "", err
+	}
 	var config UpgradeConfig
-	err := yaml.Unmarshal(src, &config)
+	err = yaml.Unmarshal(src, &config)
 	if err != nil {
 		return "", err
 	}

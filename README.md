@@ -7,12 +7,12 @@ devops while doing upgrades or to make syncing a full node for genesis
 simple.
 
 A few very simple conventions are used to make this process as painless as
-possible as well as [go-getter](https://github.com/hashicorp/go-getter) to
-allow for binaries to be retrieved from a variety of locations with built-in
-check-summing.
+possible:
 
 * set `DAEMON_HOME` to the location where upgrade binaries should be kept (can
 be `$HOME/.gaiad` or `$HOME/.xrnd`)
+* we use [go-getter](https://github.com/hashicorp/go-getter) for all URI's which
+includes the ability to automatically compute SHA256 checksum's and unpack archives
 * place the genesis binary at `$DAEMON_HOME/upgrade_manager/genesis` or point
 `GENESIS_BINARY` to a [go-getter](https://github.com/hashicorp/go-getter) URI
 to retrieve it from

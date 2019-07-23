@@ -20,16 +20,16 @@ to retrieve it from
 where `<name>` is the URI-encoded name of the upgrade as specified in the upgrade
 module plan
 * or, store an os/architecture -> binary URI map in the upgrade plan info field
-as json under the `"upgrade_config"` key, eg:
+as JSON or YAML under the `"binaries"` key, eg:
 ```json
 {
-  "upgrade_config": {
+  "binaries": {
     "linux/amd64":"https://example.com/gaiad?checksum=sha256:b7d96c89d09d9e204f5fedc4d5d55b21"
   }
 }
 ```
-* the `"upgrade_config"` key in the upgrade plan can also ge a [go-getter](https://github.com/hashicorp/go-getter) URI
-that points to a JSON file with the os/architecture -> binary URI map
+* or, set the upgrade plan to URI that points to a YAML or JSON file with the above structure 
+that can be retrieved by [go-getter](https://github.com/hashicorp/go-getter) 
 * all arguments passed to the upgrade manager command will be passed to the
 current daemon binary
 * the upgrade manager will monitor the stdout of the daemon to look for signals

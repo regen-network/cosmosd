@@ -1,40 +1,41 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
+	"github.com/alecthomas/gometalinter/_linters/src/gopkg.in/yaml.v2"
 	"github.com/hashicorp/go-getter"
 	"io"
 	"io/ioutil"
 	"net/url"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
 )
 
 type proc struct {
-	args []string
-	cmd *exec.Cmd
+	args      []string
+	cmd       *exec.Cmd
 	upgrading bool
 }
 
 var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):(.*)`)
 
 type upgradeListener struct {
-	proc *proc
+	proc   *proc
 	writer io.Writer
 }
 
-type OnChainConfig struct {
-	// UpgradeConfig is a map of OS/architecture names
+type UpgradeConfig struct {
+	// Binaries is a map of OS/architecture names
 	// to binary URI's that can be resolved with go-getter
 	// (they should include SHA256 or SHA512 check-sums), or
 	// it is a string that points to a JSON file with an os/architecture
 	// to binary map. OS/architecture names are formed by concatenating
 	// GOOS and GOARCH with "/" as the separator.
-    UpgradeConfig interface{} `json:"upgrade_config"`
+	Binaries map[string]string `json:"binaries"`
 }
 
 func (listener upgradeListener) Write(p []byte) (n int, err error) {
@@ -45,48 +46,43 @@ func (listener upgradeListener) Write(p []byte) (n int, err error) {
 		}
 		name := string(matches[0])
 		// first check if there is a binary in data/
-		path, err := bootstrapBinary(name, "", false)
+		binPath, err := bootstrapBinary(name, "", false)
 		if err != nil {
-			var onChainConfig OnChainConfig
-			err = json.Unmarshal(matches[2], &onChainConfig)
-			if err != nil {
-				panic(err)
+			info := matches[2]
+			src := info
+			if _, err := url.Parse(string(info)); err == nil {
+				filename := filepath.Join(getDataDir(), "upgrades",
+						fmt.Sprintf("%s.yaml", url.PathEscape(name)))
+				err = getter.GetFile(filename, string(info))
+				if err != nil {
+                    contents, err := ioutil.ReadFile(filename)
+                    if err != nil {
+                    	src = contents
+					}
+				}
 			}
-			var uri string
-			switch upgradeConfig := onChainConfig.UpgradeConfig.(type) {
-			case string:
-				// download the os/architecture map
-				tmpfile, err := ioutil.TempFile("", "cosmos_upgrader_archmap")
-				if err != nil {
-					panic(err)
-				}
-				defer os.Remove(tmpfile.Name())
-				err = getter.GetFile(tmpfile.Name(), upgradeConfig)
-				if err != nil {
-					panic(err)
-				}
-				archMapSrc, err := ioutil.ReadFile(tmpfile.Name())
-				if err != nil {
-					panic(err)
-				}
-				var archMap map[string]interface{}
-				err = json.Unmarshal(archMapSrc, &archMap)
-				if err != nil {
-					panic(err)
-				}
-				uri = getUriFromArchMap(archMap)
-			case map[string]interface{}:
-				// we have the os/architecture map on-chain
-				uri = getUriFromArchMap(upgradeConfig)
-			}
-			path, err = bootstrapBinary(name, uri, false)
+			binPath, err = processUpgradeConfig(name, src)
 			if err != nil {
 				panic(err)
 			}
 		}
-		listener.proc.launchProc(path)
+		listener.proc.launchProc(binPath)
 	}
 	return listener.writer.Write(p)
+}
+
+func processUpgradeConfig(upgradeName string, src []byte) (string, error) {
+	var config UpgradeConfig
+	err := yaml.Unmarshal(src, &config)
+	if err != nil {
+		return "", err
+	}
+	osArch := fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+	uri := config.Binaries[osArch]
+	if uri == "" {
+		return "", fmt.Errorf("cannot find binary for os/arch: %s", osArch)
+	}
+	return bootstrapBinary(path.Join("upgrades", upgradeName), uri, false)
 }
 
 func getUriFromArchMap(archMap map[string]interface{}) string {
@@ -103,11 +99,11 @@ func getDataDir() string {
 
 func bootstrapBinary(upgradeName string, uri string, force bool) (string, error) {
 	path := filepath.Join(getDataDir(), url.PathEscape(upgradeName))
-	_, err :=os.Lstat(path)
+	_, err := os.Lstat(path)
 	if err != nil || force {
 		err := getter.GetFile(path, uri)
 		if err != nil {
-            return "", err
+			return "", err
 		}
 	}
 	return path, nil
@@ -158,7 +154,7 @@ func main() {
 	var path string
 	// first check if there is an existing binary symlinked to data/current
 	fi, err := os.Lstat(getCurLink())
-	if err == nil && fi.Mode() & os.ModeSymlink != 0 {
+	if err == nil && fi.Mode()&os.ModeSymlink != 0 {
 		path, err = os.Readlink(getCurLink())
 		if err != nil {
 			panic(err)
@@ -180,5 +176,5 @@ func main() {
 	}
 	p := &proc{args: os.Args[1:]}
 	go p.launchProc(path)
-	select { }
+	select {}
 }

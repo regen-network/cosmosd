@@ -1,15 +1,17 @@
 package main
 
 import (
-	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"github.com/hashicorp/go-getter"
 	"io"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
+	"runtime"
 )
 
 type proc struct {
@@ -24,25 +26,14 @@ type upgradeListener struct {
 	writer io.Writer
 }
 
-func loadConfig() Config {
-	var config Config
-	configPath := os.Getenv("COSMOS_UPGRADE_MANAGER_CONFIG")
-	if configPath == "" {
-		configPath = "upgrade_manager.json"
-	}
-	configSrc, err := ioutil.ReadFile(configPath)
-	if err != nil {
-		panic(err)
-	}
-	err = cdc.UnmarshalJSON(configSrc, &config)
-	if err != nil {
-		panic(err)
-	}
-	return config
-}
-
 type OnChainConfig struct {
-	Resolver Resolver `json:"upgrade_resolver"`
+	// UpgradeConfig is a map of OS/architecture names
+	// to binary URI's that can be resolved with go-getter
+	// (they should include SHA256 or SHA512 check-sums), or
+	// it is a string that points to a JSON file with an os/architecture
+	// to binary map. OS/architecture names are formed by concatenating
+	// GOOS and GOARCH with "/" as the separator.
+    UpgradeConfig interface{} `json:"upgrade_config"`
 }
 
 func (listener upgradeListener) Write(p []byte) (n int, err error) {
@@ -52,55 +43,129 @@ func (listener upgradeListener) Write(p []byte) (n int, err error) {
 			panic(fmt.Errorf("unexpected upgrade string: %s", p))
 		}
 		name := string(matches[0])
-		config := loadConfig()
-		var resolver Resolver
-		resolver, found := config.Upgrades[name]
-		if !found {
-			var onchainConfig OnChainConfig
-			err = cdc.UnmarshalJSON(matches[2], &onchainConfig)
+		// first check if there is a binary in data/
+		path, err := bootstrapBinary(name, "", false)
+		if err != nil {
+			var onChainConfig OnChainConfig
+			err = json.Unmarshal(matches[2], &onChainConfig)
 			if err != nil {
 				panic(err)
 			}
-			resolver = onchainConfig.Resolver
+			var uri string
+			switch upgradeConfig := onChainConfig.UpgradeConfig.(type) {
+			case string:
+				// download the os/architecture map
+				tmpfile, err := ioutil.TempFile("", "cosmos_upgrader_archmap")
+				if err != nil {
+					panic(err)
+				}
+				defer os.Remove(tmpfile.Name())
+				err = getter.GetFile(tmpfile.Name(), upgradeConfig)
+				if err != nil {
+					panic(err)
+				}
+				archMapSrc, err := ioutil.ReadFile(tmpfile.Name())
+				if err != nil {
+					panic(err)
+				}
+				var archMap map[string]interface{}
+				err = json.Unmarshal(archMapSrc, &archMap)
+				if err != nil {
+					panic(err)
+				}
+				uri = getUriFromArchMap(archMap)
+			case map[string]interface{}:
+				// we have the os/architecture map on-chain
+				uri = getUriFromArchMap(upgradeConfig)
+			}
+			path, err = bootstrapBinary(name, uri, false)
+			if err != nil {
+				panic(err)
+			}
 		}
-		listener.proc.LaunchProc(resolver)
+		listener.proc.launchProc(path)
 	}
 	return listener.writer.Write(p)
 }
 
-func (p *proc) LaunchProc(resolver Resolver) {
+func getUriFromArchMap(archMap map[string]interface{}) string {
+	return archMap[fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)].(string)
+}
+
+func getDataDir() string {
+	daemonHome, found := os.LookupEnv("DAEMON_HOME")
+	if !found {
+		panic("DAEMON_HOME environment variable must be set")
+	}
+	return filepath.Join(daemonHome, "data/upgrade_manager")
+}
+
+func bootstrapBinary(upgradeName string, uri string, force bool) (string, error) {
+	path := filepath.Join(getDataDir(), url.PathEscape(upgradeName))
+	_, err :=os.Lstat(path)
+	if err != nil || force {
+		err := getter.GetFile(path, uri)
+		if err != nil {
+            return "", err
+		}
+	}
+	return path, nil
+}
+
+func getCurLink() string {
+	return filepath.Join(getDataDir(), "current")
+}
+
+func symlinkCurrentBinary(path string) {
+	os.Remove(getCurLink())
+	err := os.Symlink(path, getCurLink())
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (p *proc) launchProc(path string) {
 	existing := p.cmd
 	p.cmd = nil
 	if existing != nil {
 		_ = existing.Process.Kill()
 	}
-	path := resolver.BinaryPath()
-	expectedHash, err := hex.DecodeString(resolver.Sha256Hash())
-	if err != nil {
-		panic(err)
-	}
-	hasher := sha256.New()
-	s, err := ioutil.ReadFile(path)
-	if err != nil {
-		panic(err)
-	}
-	hasher.Write(s)
-	hash := hasher.Sum(nil)
-	if !bytes.Equal(hash, expectedHash) {
-		panic(fmt.Errorf("binary %s has hash %x, expected %x", path, hash, expectedHash))
-	}
 	cmd := exec.Command(path, p.args...)
 	p.cmd = cmd
 	cmd.Stdout = upgradeListener{p, os.Stdout}
 	cmd.Stderr = upgradeListener{p, os.Stderr}
-	err = cmd.Start()
+	err := cmd.Start()
 	if err != nil {
 		panic(err)
 	}
+	symlinkCurrentBinary(path)
 }
 
 func main() {
-	config := loadConfig()
-	p := proc{os.Args, nil}
-	p.LaunchProc(config.Genesis)
+	var path string
+	// first check if there is an existing binary symlinked to data/current
+	fi, err := os.Lstat(getCurLink())
+	if err == nil && fi.Mode() & os.ModeSymlink != 0 {
+		path, err = os.Readlink(getCurLink())
+		if err != nil {
+			panic(err)
+		}
+	} else {
+		// then check if there is a binary setup at data/genesis
+		path, err = bootstrapBinary("genesis", "", false)
+		if err != nil {
+			// now try checking if there is a binary setup in GENESIS_BINARY
+			genBin := os.Getenv("GENESIS_BINARY")
+			if genBin == "" {
+				panic(fmt.Errorf("no binary configured, please use the GENESIS_BINARY environment variable to setup a genesis binary or setup one at %s/genesis", getDataDir()))
+			}
+			path, err = bootstrapBinary("genesis", genBin, true)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+	p := &proc{args: os.Args[1:]}
+	go p.launchProc(path)
+	select { }
 }

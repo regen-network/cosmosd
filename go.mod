@@ -1,5 +1,5 @@
-module github.com/regen-network/cosmos-binmgr
+module github.com/regen-network/cosmos-upgrade-manager
 
 go 1.12
 
-require github.com/tendermint/go-amino v0.15.0 // indirect
+require github.com/hashicorp/go-getter v1.3.0

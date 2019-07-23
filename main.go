@@ -17,6 +17,7 @@ import (
 type proc struct {
 	args []string
 	cmd *exec.Cmd
+	upgrading bool
 }
 
 var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):(.*)`)
@@ -125,6 +126,7 @@ func symlinkCurrentBinary(path string) {
 }
 
 func (p *proc) launchProc(path string) {
+	p.upgrading = true
 	existing := p.cmd
 	p.cmd = nil
 	if existing != nil {
@@ -139,6 +141,17 @@ func (p *proc) launchProc(path string) {
 		panic(err)
 	}
 	symlinkCurrentBinary(path)
+	p.upgrading = false
+	go func() {
+		err = cmd.Wait()
+		if !p.upgrading {
+			if err == nil {
+				os.Exit(0)
+			} else {
+				os.Exit(-1)
+			}
+		}
+	}()
 }
 
 func main() {

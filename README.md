@@ -30,8 +30,6 @@ be `$HOME/.gaiad` or `$HOME/.xrnd`)
 constrolled by it. Under this folder, we will see the following:
 
 ```
-- bin
-  - upgrade_manager (this binary)
 - genesis
   - bin
     - $DAEMON_NAME
@@ -39,7 +37,7 @@ constrolled by it. Under this folder, we will see the following:
   - <name>
     - bin
       - $DAEMON_NAME
-- current -> upgrades/foo
+- current -> upgrades/foo, genesis, etc
 ```
 
 Each version of the chain is stored under either `genesis` or `upgrades/<name>`, which holds `bin/$DAEMON_NAME`
@@ -48,15 +46,26 @@ active folder (so `current/bin/$DAEMON_NAME` is the binary)
 
 Note: the `<name>` after `upgrades` is the URI-encoded name of the upgrade as specified in the upgrade module plan.
 
-**Question** where is the state of the blockchain (config, data) stored? Under the update manager, or elsewhere?
+Please note that `$DAEMON_HOME/upgrade_manager` just stores the *binaries* and associated *program code*.
+The `upgrader` binary can be stored in any typical location (eg `/usr/local/bin`). The actual blockchain
+program will store it's data under `$GAIA_HOME` etc, which is independent of the `$DAEMON_HOME`. You can
+choose to export `GAIA_HOME=$DAEMON_HOME` and then end up with a configuation like the following, but this
+is left as a choice to the admin for best directory layout.
+
+```
+- .gaiad
+  - config
+  - data
+  - upgrade_manager
+```
 
 ## Usage
 
 Basic Usage:
 
-* The admin is responsible for installing the `upgrade_manager` and setting it as a eg. systemd service to auto-restart
+* The admin is responsible for installing the `upgrade_manager` and setting it as a eg. systemd service to auto-restart, along with proper environmental variables
 * The admin is responsible for installing the `genesis` folder manually
-* The admin is responsible for setting the `current` link to point to genesis
+* The upgrade manager will set the `current` link to point to `genesis` at first start (when no `current` link exists)
 * The admin is (generally) responsible for installing the `upgrades/<name>` folders manually
 * The upgrade manager handles switching over the binaries at the correct points, so the admin can prepare days in advance and relax at upgrade time
 
@@ -100,24 +109,28 @@ This info is expected to be outputed on the halt log message. There are two
 valid format to specify a download in such a message:
 
 1. Store an os/architecture -> binary URI map in the upgrade plan info field
-as JSON (or YAML??) under the `"binaries"` key, eg:
+as JSON under the `"binaries"` key, eg:
 ```json
 {
   "binaries": {
-    "linux/amd64":"https://example.com/gaiad?checksum=sha256:b7d96c89d09d9e204f5fedc4d5d55b21"
+    "linux/amd64":"https://example.com/gaia.zip?checksum=sha256:aec070645fe53ee3b3763059376134f058cc337247c978add178b6ccdfb0019f"
   }
 }
 ```
 2. Store a link to a file that contains all information in the above format (eg. if you want
 to specify lots of binaries, changelog info, etc without filling up the blockchain).
-```json
-{
-  "link":"https://example.com/testnet-1001-info.json"
-}
-```
+
+e.g `https://example.com/testnet-1001-info.json?checksum=sha256:deaaa99fda9407c4dbe1d04bd49bab0cc3c1dd76fa392cd55a9425be074af01e`
+
 This file contained in link will be retrieved by [go-getter](https://github.com/hashicorp/go-getter) 
 and the "binaries" field will be parsed as above.
 
 If there is no local binary, `DAEMON_DOWNLOAD=on`, and we can access a canonical url for the new binary,
 then the upgrade_manager will download it with [go-getter](https://github.com/hashicorp/go-getter) and
 unpack it into the `upgrades/<name>` folder to be run as if we installed it manually
+
+Note that for this mechanism to provide strong security guarantees, all URLS should include a
+sha{256,512} checksum. This ensures that no false binary is run, even if someone hacks the server
+or hijacks the dns. go-getter will always ensure the downloaded file matches the checksum if it
+is provided. And also handles unpacking archives into directories (so these download links should be
+a zip of all data in the bin directory).

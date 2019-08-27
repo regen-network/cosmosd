@@ -20,7 +20,7 @@ to retrieve it from
 where `<name>` is the URI-encoded name of the upgrade as specified in the upgrade
 module plan
 * or, store an os/architecture -> binary URI map in the upgrade plan info field
-as JSON or YAML under the `"binaries"` key, eg:
+as JSON (or YAML??) under the `"binaries"` key, eg:
 ```json
 {
   "binaries": {
@@ -36,3 +36,25 @@ current daemon binary
 from the upgrade module indicating a pending or required upgrade and act
 appropriately, preferring on-disk binaries when they are present and defaulting
 to binaries provided in the on-chain upgrade plan when they are not
+
+
+## Layout of `DAEMON_HOME` Folder
+
+* `$DAEMON_HOME/upgrade_manager/genesis` or `$DAEMON_HOME/upgrade_manager/genesis/bin/$DAEMON_NAME` should point to the
+genesis binary
+* `$DAEMON_HOME/upgrade_manager/upgrades/<upgrade-name>` or
+`$DAEMON_HOME/upgrade_manager/upgrades/<upgrade-name>/bin/$DAEMON_NAME` should point to the binary for the upgrade
+named `<upgrade-name>`
+* `$DAEMON_HOME/upgrade_manager/current` is symlink'ed to the current binary
+
+
+## Upgradeable Binary Specification
+
+This upgrade manager works with any binary that follows the following specification:
+
+* when an upgrade is needed the binary will emit a message that matches this
+regular expression: `UPGRADE "(.*)" NEEDED at height (\d+):(.*)`.
+* the second match in the above regular expression can be a JSON object with
+a `binaries` key as described above
+
+Binaries will be started as sub-processes and killed when an upgrade is needed

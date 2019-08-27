@@ -1,8 +1,8 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/alecthomas/gometalinter/_linters/src/gopkg.in/yaml.v2"
 	"github.com/hashicorp/go-getter"
 	"io"
 	"io/ioutil"
@@ -45,12 +45,12 @@ func (listener upgradeListener) Write(p []byte) (n int, err error) {
 			panic(fmt.Errorf("unexpected upgrade string: %s", p))
 		}
 		name := string(matches[0])
-		// first check if there is a binary in data/
+		// first check if there is a binary in upgrade_manager/
 		binPath, err := bootstrapBinary(name, "", false)
 		if err != nil {
 			info := matches[2]
 			configFile := filepath.Join(getDataDir(), "upgrades",
-				fmt.Sprintf("%s.yaml", url.PathEscape(name)))
+				fmt.Sprintf("%s.json", url.PathEscape(name)))
 			if _, err := url.Parse(string(info)); err == nil {
 				err = getter.GetFile(configFile, string(info))
 				if err != nil {
@@ -78,7 +78,7 @@ func processUpgradeConfig(upgradeName, configFile string) (string, error) {
 		return "", err
 	}
 	var config UpgradeConfig
-	err = yaml.Unmarshal(src, &config)
+	err = json.Unmarshal(src, &config)
 	if err != nil {
 		return "", err
 	}
@@ -90,16 +90,12 @@ func processUpgradeConfig(upgradeName, configFile string) (string, error) {
 	return bootstrapBinary(path.Join("upgrades", upgradeName), uri, false)
 }
 
-func getUriFromArchMap(archMap map[string]interface{}) string {
-	return archMap[fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)].(string)
-}
-
 func getDataDir() string {
 	daemonHome, found := os.LookupEnv("DAEMON_HOME")
 	if !found {
 		panic("DAEMON_HOME environment variable must be set")
 	}
-	return filepath.Join(daemonHome, "data/upgrade_manager")
+	return filepath.Join(daemonHome, "upgrade_manager")
 }
 
 func bootstrapBinary(upgradeName string, uri string, force bool) (string, error) {
@@ -157,7 +153,7 @@ func (p *proc) launchProc(path string) {
 
 func main() {
 	var path string
-	// first check if there is an existing binary symlinked to data/current
+	// first check if there is an existing binary symlinked to current
 	fi, err := os.Lstat(getCurLink())
 	if err == nil && fi.Mode()&os.ModeSymlink != 0 {
 		path, err = os.Readlink(getCurLink())
@@ -165,7 +161,7 @@ func main() {
 			panic(err)
 		}
 	} else {
-		// then check if there is a binary setup at data/genesis
+		// then check if there is a binary setup at genesis
 		path, err = bootstrapBinary("genesis", "", false)
 		if err != nil {
 			// now try checking if there is a binary setup in GENESIS_BINARY

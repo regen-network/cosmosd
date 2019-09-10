@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hashicorp/go-getter"
 	"io"
 	"io/ioutil"
 	"net/url"
@@ -11,8 +10,9 @@ import (
 	"os/exec"
 	"path"
 	"path/filepath"
-	"regexp"
 	"runtime"
+
+	"github.com/hashicorp/go-getter"
 )
 
 type proc struct {
@@ -20,8 +20,6 @@ type proc struct {
 	cmd       *exec.Cmd
 	upgrading bool
 }
-
-var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+): (.*)$`)
 
 type upgradeListener struct {
 	proc   *proc
@@ -178,4 +176,10 @@ func main() {
 	p := &proc{args: os.Args[1:]}
 	go p.launchProc(path)
 	select {}
+}
+
+// connect writer to scanning reader...
+
+func read(w io.Writer) {
+
 }

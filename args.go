@@ -1,6 +1,7 @@
 package main
 
 import (
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -33,7 +34,13 @@ func (cfg *Config) GenesisBin() string {
 
 // UpgradeBin is the path to the binary for the named upgrade
 func (cfg *Config) UpgradeBin(upgradeName string) string {
-	return filepath.Join(cfg.Root(), upgradesDir, upgradeName, "bin", cfg.Name)
+	return filepath.Join(cfg.UpgradeDir(upgradeName), "bin", cfg.Name)
+}
+
+// UpgradeDir is the directory named upgrade
+func (cfg *Config) UpgradeDir(upgradeName string) string {
+	safeName := url.PathEscape(upgradeName)
+	return filepath.Join(cfg.Root(), upgradesDir, safeName)
 }
 
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
@@ -56,7 +63,8 @@ func (cfg *Config) SetCurrentUpgrade(upgradeName string) error {
 
 	// set a symbolic link
 	link := filepath.Join(cfg.Root(), currentLink)
-	upgrade := filepath.Join(cfg.Root(), upgradesDir, upgradeName)
+	safeName := url.PathEscape(upgradeName)
+	upgrade := filepath.Join(cfg.Root(), upgradesDir, safeName)
 	if err := os.Symlink(link, upgrade); err != nil {
 		return errors.Wrap(err, "creating current symlink")
 	}

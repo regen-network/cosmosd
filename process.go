@@ -34,18 +34,6 @@ func LaunchProcess(cfg *Config, bin string, args []string) error {
 	return nil
 }
 
-// DoUpgrade will be called after the log message has been parsed and the process has terminated.
-// We can now make any changes to the underlying directory without interferance and leave it
-// in a state the will make a proper restart
-func DoUpgrade(cfg *Config, info *UpgradeInfo) error {
-	// Simplest case is to switch the link
-
-	// If not there, then we try to download it... maybe
-
-	// TODO
-	return nil
-}
-
 // WaitForUpgradeOrExit listens to both output streams of the process, as well as the process state itself
 // When it returns, the process is finished and all streams have closed.
 //
@@ -82,7 +70,6 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 
 	waitScan := func(scan *bufio.Scanner) {
 		wg.Add(1)
-		// TODO: better handle errors???
 		upgrade, err := WaitForUpdate(scanOut)
 		if err != nil {
 			setError(err)
@@ -95,7 +82,6 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 	// wait for command to exit
 	go func() {
 		wg.Add(1)
-		// TODO: better handle errors???
 		if err := cmd.Wait(); err != nil {
 			setError(err)
 		}

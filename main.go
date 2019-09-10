@@ -15,8 +15,6 @@ func main() {
 
 // Run is the main loop, but returns an error
 func Run(args []string) error {
-	// TODO: remove this
-	fmt.Println(args)
 	cfg, err := GetConfigFromEnv()
 	if err != nil {
 		return err

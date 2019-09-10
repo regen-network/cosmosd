@@ -26,7 +26,5 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-
-	// TODO: launch it
-	return nil
+	return LaunchProcess(cfg, bin, args)
 }

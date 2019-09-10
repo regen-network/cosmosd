@@ -21,7 +21,7 @@ type proc struct {
 	upgrading bool
 }
 
-var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):(.*)`)
+var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+): (.*)$`)
 
 type upgradeListener struct {
 	proc   *proc

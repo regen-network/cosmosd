@@ -115,6 +115,10 @@ func (cfg *Config) validate() error {
 		return errors.New("DAEMON_HOME is not set")
 	}
 
+	if !filepath.IsAbs(cfg.Home) {
+		return errors.New("DAEMON_HOME must be an absolute path")
+	}
+
 	// ensure the root directory exists
 	info, err := os.Stat(cfg.Root())
 	if err != nil {

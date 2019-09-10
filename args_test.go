@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"path/filepath"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -41,3 +42,61 @@ func TestConfigPaths(t *testing.T) {
 		})
 	}
 }
+
+// Test validate
+func TestValidate(t *testing.T) {
+	relPath := filepath.Join("testdata", "validate")
+	absPath, err := filepath.Abs(relPath)
+	assert.NoError(t, err)
+
+	testdata, err := filepath.Abs("testdata")
+	assert.NoError(t, err)
+
+	cases := map[string]struct{
+		cfg Config 
+		valid bool
+	}{
+		"happy": {
+			cfg: Config{Home: absPath, Name: "bind"},
+			valid: true,
+		},
+		"happy with download": {
+			cfg: Config{Home: absPath, Name: "bind", Download: true},
+			valid: true,
+		},
+		"missing home": {
+			cfg: Config{Name: "bind"},
+			valid: false,
+		},
+		"missing name": {
+			cfg: Config{Home: absPath},
+			valid: false,
+		},
+		"relative path": {
+			cfg: Config{Home: relPath, Name: "bind"},
+			valid: false,
+		},
+		"no upgrade manager subdir": {
+			cfg: Config{Home: testdata, Name: "bind"},
+			valid: false,
+		},
+		"no such dir": {
+			cfg: Config{Home: "/no/such/dir", Name: "bind"},
+			valid: false,
+		},
+
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func (t *testing.T) {
+			err := tc.cfg.validate()
+			if tc.valid {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
+// setup test data and try out EnsureBinary with various file setups and permissions, also CurrentBin/SetCurrentBin

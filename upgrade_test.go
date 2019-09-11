@@ -37,12 +37,13 @@ func TestCurrentBin(t *testing.T) {
 	}
 }
 
-func TestDoUpgrade(t *testing.T) {
+// TODO: test with download (and test all download functions)
+func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 	home, err := copyTestData("validate")
 	require.NoError(t, err)
 	defer os.RemoveAll(home)
 
-	cfg := &Config{Home: home, Name: "dummyd"}
+	cfg := &Config{Home: home, Name: "dummyd", Download: true}
 	assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
 
 	// do upgrade ignores bad files
@@ -62,8 +63,6 @@ func TestDoUpgrade(t *testing.T) {
 		// we should see current point to the new upgrade dir
 		assert.Equal(t, cfg.UpgradeBin(upgrade), cfg.CurrentBin())
 	}
-
-	// TODO: test with download
 }
 
 // copyTestData will make a tempdir and then

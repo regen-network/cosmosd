@@ -99,4 +99,37 @@ func TestValidate(t *testing.T) {
 	}
 }
 
+func TestEnsureBin(t *testing.T) {
+	relPath := filepath.Join("testdata", "validate")
+	absPath, err := filepath.Abs(relPath)
+	assert.NoError(t, err)
+
+	cfg := Config{Home: absPath, Name: "dummyd"}
+	assert.NoError(t, cfg.validate())
+
+	err = EnsureBinary(cfg.GenesisBin())
+	assert.NoError(t, err)
+
+	cases := map[string]struct{
+		upgrade string
+		hasBin bool
+	}{
+		"proper": {"chain2", true},
+		"no binary": {"nobin", false},
+		"not executable": {"noexec", false},
+		"no directory": {"foobarbaz", false},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func (t *testing.T) {
+			err := EnsureBinary(cfg.UpgradeBin(tc.upgrade))
+			if tc.hasBin {
+				assert.NoError(t, err)
+			} else {
+				assert.Error(t, err)
+			}
+		})
+	}
+}
+
 // setup test data and try out EnsureBinary with various file setups and permissions, also CurrentBin/SetCurrentBin

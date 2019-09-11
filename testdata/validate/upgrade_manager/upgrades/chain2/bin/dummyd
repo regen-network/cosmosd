@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo Chain 2 is live!
+sleep 1
+echo Finished successfully

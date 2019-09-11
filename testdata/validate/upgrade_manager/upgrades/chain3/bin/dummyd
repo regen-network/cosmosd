@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo Chain 3 finally!
+sleep 1
+echo Finished successfully

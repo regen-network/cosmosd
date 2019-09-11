@@ -97,6 +97,13 @@ func (cfg *Config) SetCurrentUpgrade(upgradeName string) error {
 	link := filepath.Join(cfg.Root(), currentLink)
 	safeName := url.PathEscape(upgradeName)
 	upgrade := filepath.Join(cfg.Root(), upgradesDir, safeName)
+
+	// remove link if it exists
+	if _, err := os.Stat(link); err == nil {
+		os.Remove(link)
+	}
+
+	// point to the new directory
 	if err := os.Symlink(upgrade, link); err != nil {
 		return errors.Wrap(err, "creating current symlink")
 	}

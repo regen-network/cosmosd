@@ -15,6 +15,7 @@ import (
 func TestCurrentBin(t *testing.T) {
 	home, err := copyTestData("validate")
 	require.NoError(t, err)
+	defer os.RemoveAll(home)
 
 	cfg := Config{Home: home, Name: "dummyd"}
 	assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
@@ -28,22 +29,20 @@ func TestCurrentBin(t *testing.T) {
 
 	linkPath := filepath.Join(cfg.Root(), "current")
 	binPath := filepath.Join(linkPath, "bin", "dummyd")
-	activePath := cfg.UpgradeDir("chain2")
 
-	// now set it to a valid upgrade and make sure CurrentBin is now set properly
-	err = cfg.SetCurrentUpgrade("chain2")
-	require.NoError(t, err)
-	// we should see current in the path
-	assert.Equal(t, binPath, cfg.CurrentBin())
-	// make sure current points to current upgrade
-	dest, err := os.Readlink(linkPath)
-	require.NoError(t, err)
-	require.Equal(t, activePath, dest)
-
-	// // setting it a second time shouldn't fail either (test update symlink)
-	// err = cfg.SetCurrentUpgrade("chain2")
-	// require.NoError(t, err)
-	// assert.Equal(t, cfg.UpgradeBin("chain2"), cfg.CurrentBin())
+	// try a few times to make sure this can be reproduced
+	for _, upgrade := range []string{"chain2", "chain3", "chain2"} {
+		// now set it to a valid upgrade and make sure CurrentBin is now set properly
+		err = cfg.SetCurrentUpgrade(upgrade)
+		require.NoError(t, err)
+		// we should see current in the path
+		assert.Equal(t, binPath, cfg.CurrentBin())
+		// make sure current points to current upgrade
+		activePath := cfg.UpgradeDir(upgrade)
+		dest, err := os.Readlink(linkPath)
+		require.NoError(t, err)
+		require.Equal(t, activePath, dest)
+	}
 }
 
 func TestDoUpgrade(t *testing.T) {

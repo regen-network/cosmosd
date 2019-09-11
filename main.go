@@ -19,10 +19,5 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	bin := cfg.CurrentBin()
-	err = EnsureBinary(bin)
-	if err != nil {
-		return err
-	}
-	return LaunchProcess(cfg, bin, args)
+	return LaunchProcess(cfg, args, os.Stdout, os.Stderr)
 }

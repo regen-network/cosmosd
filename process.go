@@ -2,7 +2,7 @@ package main
 
 import (
 	"bufio"
-	"os"
+	"io"
 	"os/exec"
 	"strings"
 	"sync"
@@ -12,12 +12,19 @@ import (
 
 // LaunchProcess runs a subprocess and returns when the subprocess exits,
 // either when it dies, or *after* a successful upgrade.
-func LaunchProcess(cfg *Config, bin string, args []string) error {
+func LaunchProcess(cfg *Config, args []string, stdout, stderr io.WriteCloser) error {
+	bin := cfg.CurrentBin()
+	err := EnsureBinary(bin)
+	if err != nil {
+		return errors.Wrap(err, "current binary invalid")
+	}
+
 	cmd := exec.Command(bin, args...)
 	var scanOut, scanErr *bufio.Scanner
-	cmd.Stdout, scanOut = ScanningWriter(os.Stdout)
-	cmd.Stderr, scanErr = ScanningWriter(os.Stderr)
-	err := cmd.Start()
+	cmd.Stdout, scanOut = ScanningWriter(stdout)
+	cmd.Stderr, scanErr = ScanningWriter(stderr)
+
+	err = cmd.Start()
 	if err != nil {
 		return errors.Wrapf(err, "launching process %s %s", bin, strings.Join(args, " "))
 	}

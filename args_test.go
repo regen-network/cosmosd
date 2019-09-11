@@ -1,8 +1,8 @@
 package main
 
 import (
-	"testing"
 	"path/filepath"
+	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -11,31 +11,31 @@ import (
 // The actual code should work on windows... probably (not sure about process stuff)
 
 func TestConfigPaths(t *testing.T) {
-	cases := map[string]struct{
-		cfg Config 
-		upgradeName string
-		expectRoot string 
+	cases := map[string]struct {
+		cfg           Config
+		upgradeName   string
+		expectRoot    string
 		expectGenesis string
 		expectUpgrade string
 	}{
 		"simple": {
-			cfg: Config{Home: "/foo", Name: "myd"},
-			upgradeName: "bar",
-			expectRoot: "/foo/upgrade_manager",
+			cfg:           Config{Home: "/foo", Name: "myd"},
+			upgradeName:   "bar",
+			expectRoot:    "/foo/upgrade_manager",
 			expectGenesis: "/foo/upgrade_manager/genesis/bin/myd",
 			expectUpgrade: "/foo/upgrade_manager/upgrades/bar/bin/myd",
 		},
 		"handle space": {
-			cfg: Config{Home: "/longer/prefix/", Name: "yourd"},
-			upgradeName: "some spaces",
-			expectRoot: "/longer/prefix/upgrade_manager",
+			cfg:           Config{Home: "/longer/prefix/", Name: "yourd"},
+			upgradeName:   "some spaces",
+			expectRoot:    "/longer/prefix/upgrade_manager",
 			expectGenesis: "/longer/prefix/upgrade_manager/genesis/bin/yourd",
 			expectUpgrade: "/longer/prefix/upgrade_manager/upgrades/some%20spaces/bin/yourd",
 		},
 	}
 
 	for name, tc := range cases {
-		t.Run(name, func (t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			assert.Equal(t, tc.cfg.Root(), tc.expectRoot)
 			assert.Equal(t, tc.cfg.GenesisBin(), tc.expectGenesis)
 			assert.Equal(t, tc.cfg.UpgradeBin(tc.upgradeName), tc.expectUpgrade)
@@ -52,43 +52,42 @@ func TestValidate(t *testing.T) {
 	testdata, err := filepath.Abs("testdata")
 	assert.NoError(t, err)
 
-	cases := map[string]struct{
-		cfg Config 
+	cases := map[string]struct {
+		cfg   Config
 		valid bool
 	}{
 		"happy": {
-			cfg: Config{Home: absPath, Name: "bind"},
+			cfg:   Config{Home: absPath, Name: "bind"},
 			valid: true,
 		},
 		"happy with download": {
-			cfg: Config{Home: absPath, Name: "bind", Download: true},
+			cfg:   Config{Home: absPath, Name: "bind", Download: true},
 			valid: true,
 		},
 		"missing home": {
-			cfg: Config{Name: "bind"},
+			cfg:   Config{Name: "bind"},
 			valid: false,
 		},
 		"missing name": {
-			cfg: Config{Home: absPath},
+			cfg:   Config{Home: absPath},
 			valid: false,
 		},
 		"relative path": {
-			cfg: Config{Home: relPath, Name: "bind"},
+			cfg:   Config{Home: relPath, Name: "bind"},
 			valid: false,
 		},
 		"no upgrade manager subdir": {
-			cfg: Config{Home: testdata, Name: "bind"},
+			cfg:   Config{Home: testdata, Name: "bind"},
 			valid: false,
 		},
 		"no such dir": {
-			cfg: Config{Home: "/no/such/dir", Name: "bind"},
+			cfg:   Config{Home: "/no/such/dir", Name: "bind"},
 			valid: false,
 		},
-
 	}
 
 	for name, tc := range cases {
-		t.Run(name, func (t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			err := tc.cfg.validate()
 			if tc.valid {
 				assert.NoError(t, err)
@@ -110,18 +109,18 @@ func TestEnsureBin(t *testing.T) {
 	err = EnsureBinary(cfg.GenesisBin())
 	assert.NoError(t, err)
 
-	cases := map[string]struct{
+	cases := map[string]struct {
 		upgrade string
-		hasBin bool
+		hasBin  bool
 	}{
-		"proper": {"chain2", true},
-		"no binary": {"nobin", false},
+		"proper":         {"chain2", true},
+		"no binary":      {"nobin", false},
 		"not executable": {"noexec", false},
-		"no directory": {"foobarbaz", false},
+		"no directory":   {"foobarbaz", false},
 	}
 
 	for name, tc := range cases {
-		t.Run(name, func (t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			err := EnsureBinary(cfg.UpgradeBin(tc.upgrade))
 			if tc.hasBin {
 				assert.NoError(t, err)
@@ -132,4 +131,4 @@ func TestEnsureBin(t *testing.T) {
 	}
 }
 
-// setup test data and try out EnsureBinary with various file setups and permissions, also CurrentBin/SetCurrentBin
+// TODO: test CurrentBin/SetCurrentBin

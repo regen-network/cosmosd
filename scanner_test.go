@@ -59,5 +59,3 @@ func TestWaitForInfo(t *testing.T) {
 		})
 	}
 }
-
-// setup test data and try out EnsureBinary with various file setups and permissions, also CurrentBin/SetCurrentBin

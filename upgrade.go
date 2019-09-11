@@ -3,7 +3,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	getter "github.com/hashicorp/go-getter"
@@ -81,4 +83,39 @@ func GetDownloadURL(info *UpgradeInfo) (string, error) {
 
 func osArch() string {
 	return fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
+}
+
+// SetCurrentUpgrade sets the named upgrade to be the current link, returns error if this binary doesn't exist
+func (cfg *Config) SetCurrentUpgrade(upgradeName string) error {
+	// ensure named upgrade exists
+	bin := cfg.UpgradeBin(upgradeName)
+	if err := EnsureBinary(bin); err != nil {
+		return err
+	}
+
+	// set a symbolic link
+	link := filepath.Join(cfg.Root(), currentLink)
+	safeName := url.PathEscape(upgradeName)
+	upgrade := filepath.Join(cfg.Root(), upgradesDir, safeName)
+	if err := os.Symlink(upgrade, link); err != nil {
+		return errors.Wrap(err, "creating current symlink")
+	}
+	return nil
+}
+
+// EnsureBinary ensures the file exists and is executable, or returns an error
+func EnsureBinary(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return errors.Wrap(err, "cannot stat home dir")
+	}
+	if !info.Mode().IsRegular() {
+		return errors.Errorf("%s is not a regular file", info.Name())
+	}
+	// this checks if the world-executable bit is set (we cannot check owner easily)
+	exec := info.Mode().Perm() & 0001
+	if exec == 0 {
+		return errors.Errorf("%s is not world executable", info.Name())
+	}
+	return nil
 }

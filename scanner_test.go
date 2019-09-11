@@ -4,14 +4,13 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestScanner(t *testing.T) {
+func ExampleScanner() {
 	pr, pw := io.Pipe()
 	scanner := bufio.NewScanner(pr)
 
@@ -19,7 +18,7 @@ func TestScanner(t *testing.T) {
 	go func() {
 		pw.Write([]byte("Genesis foo bar 1234\n"))
 		time.Sleep(time.Second)
-		pw.Write([]byte("UPGRADE \"chain2\" needed at height 49: {}\n"))
+		pw.Write([]byte("UPGRADE \"chain2\" NEEDED at height 49: {}\n"))
 		time.Sleep(time.Second)
 		pw.Write([]byte("End Game\n"))
 		pw.Close()
@@ -29,6 +28,9 @@ func TestScanner(t *testing.T) {
 		line := scanner.Text()
 		fmt.Println(line)
 	}
+	// Genesis foo bar 1234
+	// UPGRADE \"chain2\" NEEDED at height 49: {}
+	// End Game
 }
 
 func TestWaitForInfo(t *testing.T) {
@@ -60,7 +62,8 @@ func TestWaitForInfo(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			w, scan := ScanningWriter(ioutil.Discard)
+			r, w := io.Pipe()
+			scan := bufio.NewScanner(r)
 
 			// write all info in separate routine
 			go func() {

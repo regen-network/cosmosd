@@ -9,7 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+): (.*)$`)
+// Trim off whitespace around the info - match least greedy, grab as much space on both sides
+var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):\s+(.*?)\s*$`)
 
 type splitWriter struct {
 	multi   io.Writer

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"regexp"
 	"strconv"
@@ -18,7 +19,9 @@ type splitWriter struct {
 }
 
 func (s *splitWriter) Write(p []byte) (int, error) {
-	return s.multi.Write(p)
+	n, err := s.multi.Write(p)
+	fmt.Printf("[WRITE] Got %d, wrote %d, err=%s\n", len(p), n, err)
+	return n, err
 }
 
 func (s *splitWriter) Close() error {
@@ -31,7 +34,7 @@ func (s *splitWriter) Close() error {
 	return nil
 }
 
-// ScanningtWriter will wrap the input writer
+// ScanningWriter will wrap the input writer
 // The output is a new writer that will both pass-through write to the original writer,
 // as well as a scanner of (a copy of) all the content
 func ScanningWriter(w io.Writer) (io.WriteCloser, *bufio.Scanner) {
@@ -60,6 +63,7 @@ type UpgradeInfo struct {
 func WaitForUpdate(scanner *bufio.Scanner) (*UpgradeInfo, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
+		fmt.Printf("<SCANNER> %s\n", line)
 		if upgradeRegex.MatchString(line) {
 			subs := upgradeRegex.FindStringSubmatch(line)
 			h, err := strconv.Atoi(subs[2])

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os/exec"
 	"strings"
@@ -12,7 +13,7 @@ import (
 
 // LaunchProcess runs a subprocess and returns when the subprocess exits,
 // either when it dies, or *after* a successful upgrade.
-func LaunchProcess(cfg *Config, args []string, stdout, stderr io.WriteCloser) error {
+func LaunchProcess(cfg *Config, args []string, _stdout, _stderr io.Writer) error {
 	bin := cfg.CurrentBin()
 	err := EnsureBinary(bin)
 	if err != nil {
@@ -20,14 +21,23 @@ func LaunchProcess(cfg *Config, args []string, stdout, stderr io.WriteCloser) er
 	}
 
 	cmd := exec.Command(bin, args...)
-	var scanOut, scanErr *bufio.Scanner
-	cmd.Stdout, scanOut = ScanningWriter(stdout)
-	cmd.Stderr, scanErr = ScanningWriter(stderr)
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		return err
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		return err
+	}
+	// TODO: also write to stdout, stderr
+	scanOut := bufio.NewScanner(stdout)
+	scanErr := bufio.NewScanner(stderr)
 
 	err = cmd.Start()
 	if err != nil {
 		return errors.Wrapf(err, "launching process %s %s", bin, strings.Join(args, " "))
 	}
+	fmt.Println(cmd.Args)
 
 	// three ways to exit - command ends, find regexp in scanOut, find regexp in scanErr
 	upgradeInfo, err := WaitForUpgradeOrExit(cmd, scanOut, scanErr)
@@ -76,8 +86,8 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 	}
 
 	waitScan := func(scan *bufio.Scanner) {
-		wg.Add(1)
 		upgrade, err := WaitForUpdate(scanOut)
+		fmt.Printf("Wait for upgrade finished, %#v, %+v\n", upgrade, err)
 		if err != nil {
 			setError(err)
 		} else if upgrade != nil {
@@ -87,11 +97,12 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 	}
 
 	// wait for command to exit
+	wg.Add(3)
 	go func() {
-		wg.Add(1)
 		if err := cmd.Wait(); err != nil {
 			setError(err)
 		}
+		fmt.Println("<<CMD DONE>>")
 		wg.Done()
 	}()
 

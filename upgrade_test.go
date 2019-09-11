@@ -77,7 +77,8 @@ func copyTestData(subdir string) (string, error) {
 	src := filepath.Join("testdata", subdir)
 	options := flop.Options{
 		Recursive: true,
-		// MkdirAll:  true,
+		// this is set as workaround for https://github.com/homedepot/flop/issues/17
+		Atomic: true,
 	}
 	err = flop.Copy(src, tmpdir, options)
 	if err != nil {

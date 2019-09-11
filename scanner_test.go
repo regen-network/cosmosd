@@ -1,11 +1,35 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
+
+func TestScanner(t *testing.T) {
+	pr, pw := io.Pipe()
+	scanner := bufio.NewScanner(pr)
+
+	// write some data
+	go func() {
+		pw.Write([]byte("Genesis foo bar 1234\n"))
+		time.Sleep(time.Second)
+		pw.Write([]byte("UPGRADE \"chain2\" needed at height 49: {}\n"))
+		time.Sleep(time.Second)
+		pw.Write([]byte("End Game\n"))
+		pw.Close()
+	}()
+
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Println(line)
+	}
+}
 
 func TestWaitForInfo(t *testing.T) {
 	cases := map[string]struct {

@@ -44,13 +44,27 @@ func (cfg *Config) UpgradeDir(upgradeName string) string {
 }
 
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
+// This will resolve the symlink to the underlying directory to make it easier to debug
 func (cfg *Config) CurrentBin() string {
 	cur := filepath.Join(cfg.Root(), currentLink)
 	// if nothing here, fallback to genesis
-	if _, err := os.Stat(cur); err != nil {
+	info, err := os.Lstat(cur)
+	if err != nil {
 		return cfg.GenesisBin()
 	}
-	return filepath.Join(cur, "bin", cfg.Name)
+	// if it is there, ensure it is a symlink
+	if info.Mode()&os.ModeSymlink == 0 {
+		return cfg.GenesisBin()
+	}
+
+	// resolve it
+	dest, err := os.Readlink(cur)
+	if err != nil {
+		return cfg.GenesisBin()
+	}
+
+	// and return the binary
+	return filepath.Join(dest, "bin", cfg.Name)
 }
 
 // GetConfigFromEnv will read the environmental variables into a config

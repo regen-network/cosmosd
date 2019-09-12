@@ -2,6 +2,6 @@
 
 echo Preparing auto-download $@
 sleep 1
-echo 'UPGRADE "chain2" NEEDED at height 49: {"binaries": {"linux/amd64": "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_binary/autod.zip?checksum=sha256:b92756d60ec2dd4d23c711737aeeb019526bfb71b1c18aee69aededa07fc373c"}}'
+echo 'UPGRADE "chain2" NEEDED at height 49: {"binaries": {"linux/amd64": "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_binary/autod.zip?checksum=sha256:7ce12a68c7c7c340103b325fadb9071e0e4b215bcdd63cd9b071dbb9e866eda4"}}'
 sleep 2
 echo Never should be printed!!!

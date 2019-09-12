@@ -55,15 +55,35 @@ func DownloadBinary(cfg *Config, info *UpgradeInfo) error {
 	}
 
 	// download into the bin dir (works for one file)
-	path := cfg.UpgradeBin(info.Name)
-	err = getter.GetFile(path, url)
+	binPath := cfg.UpgradeBin(info.Name)
+	err = getter.GetFile(binPath, url)
 
 	// if this fails, let's see if it is a zipped directory
 	if err != nil {
-		path = cfg.UpgradeDir(info.Name)
-		err = getter.Get(path, url)
+		dirPath := cfg.UpgradeDir(info.Name)
+		err = getter.Get(dirPath, url)
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	// if it is successful, let's ensure the binary is executable
+	return MarkExecutable(binPath)
+}
+
+// MarkExecutable will try to set the executable bits if not already set
+// Fails if file doesn't exist or we cannot set those bits
+func MarkExecutable(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return errors.Wrap(err, "stating binary")
+	}
+	// end early if world exec already set
+	if info.Mode()&0001 == 1 {
+		return nil
+	}
+	// now try to set all exec bits
+	newMode := info.Mode().Perm() | 0111
+	return os.Chmod(path, newMode)
 }
 
 // UpgradeConfig is expected format for the info field to allow auto-download

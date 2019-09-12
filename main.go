@@ -19,5 +19,11 @@ func Run(args []string) error {
 	if err != nil {
 		return err
 	}
-	return LaunchProcess(cfg, args, os.Stdout, os.Stderr)
+	err = LaunchProcess(cfg, args, os.Stdout, os.Stderr)
+
+	// if RestartAfterUpgrade, we launch after a successful upgrade (only condition LaunchProcess returns nil)
+	for cfg.RestartAfterUpgrade && err == nil {
+		err = LaunchProcess(cfg, args, os.Stdout, os.Stderr)
+	}
+	return err
 }

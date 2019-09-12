@@ -20,6 +20,7 @@ type Config struct {
 	Home                  string
 	Name                  string
 	AllowDownloadBinaries bool
+	RestartAfterUpgrade   bool
 }
 
 // Root returns the root directory where all info lives
@@ -76,6 +77,9 @@ func GetConfigFromEnv() (*Config, error) {
 	}
 	if os.Getenv("DAEMON_ALLOW_DOWNLOAD_BINARIES") == "on" {
 		cfg.AllowDownloadBinaries = true
+	}
+	if os.Getenv("DAEMON_RESTART_AFTER_UPGRADE") == "on" {
+		cfg.RestartAfterUpgrade = true
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err

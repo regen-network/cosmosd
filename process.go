@@ -71,7 +71,7 @@ func (u *WaitResult) AsResult() (*UpgradeInfo, error) {
 func (u *WaitResult) SetError(myErr error) {
 	u.mutex.Lock()
 	defer u.mutex.Unlock()
-	if u.err == nil && u.info == nil && myErr != nil {
+	if u.info == nil && myErr != nil {
 		u.err = myErr
 	}
 }
@@ -112,11 +112,14 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 	go waitScan(scanOut)
 	go waitScan(scanErr)
 
-	// now wait for the command to end by itself, or be killed when upgrade time
-	if err := cmd.Wait(); err != nil {
-		// note that if this is killed, it returns and error,
-		// but the WaitResult has an update already, this will be ignored
-		res.SetError(err)
+	// if the command exits normally (eg. short command like `gaiad version`), just return (nil, nil)
+	// we often get broken read pipes if it runs too fast.
+	// if we had upgrade info, we would have killed it, and thus got a non-nil error code
+	err := cmd.Wait()
+	if err == nil {
+		return nil, nil
 	}
+	// this will set the error code if it wasn't killed due to upgrade
+	res.SetError(err)
 	return res.AsResult()
 }

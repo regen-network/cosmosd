@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"os"
 	"testing"
 
@@ -52,8 +51,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	home, err := copyTestData("download")
 	cfg := &Config{Home: home, Name: "autod", AllowDownloadBinaries: true}
 	require.NoError(t, err)
-	// defer os.RemoveAll(home)
-	fmt.Printf("Home: %s\n", home)
+	defer os.RemoveAll(home)
 
 	// should run the genesis binary and produce expected output
 	require.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())

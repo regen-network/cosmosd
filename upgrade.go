@@ -54,9 +54,10 @@ func DownloadBinary(cfg *Config, info *UpgradeInfo) error {
 		return err
 	}
 
-	// download
-	path := cfg.UpgradeDir(info.Name)
+	// download into the bin dir (works for one file)
+	path := cfg.UpgradeBin(info.Name)
 	return getter.GetFile(path, url)
+	// TODO: how to unpack directories (and detect them)
 }
 
 // UpgradeConfig is expected format for the info field to allow auto-download

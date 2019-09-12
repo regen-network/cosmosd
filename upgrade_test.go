@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/homedepot/flop"
@@ -66,7 +68,7 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 }
 
 func TestOsArch(t *testing.T) {
-	// all other tests will fail if we are not on linux...
+	// all download tests will fail if we are not on linux...
 	assert.Equal(t, "linux/amd64", osArch())
 }
 
@@ -97,6 +99,83 @@ func TestGetDownloadURL(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.Equal(t, tc.url, url)
+			}
+		})
+	}
+}
+
+func TestDownloadBinary(t *testing.T) {
+	cases := map[string]struct {
+		url         string
+		canDownload bool
+		validBinary bool
+	}{
+		"get raw binary": {
+			url:         "./testdata/repo/raw_binary/autod",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get raw binary with checksum": {
+			// TODO: not sure how to calculate this - this is from go-getter, but differs than hashalot.sha256 digest
+			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:e6bc7851600a2a9917f7bf88eb7bdee1ec162c671101485690b4deb089077b0d",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get raw binary with invalid checksum": {
+			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:73e2bd6cbb99261733caf137015d5cc58e3f96248d8b01da68be8564989dd906",
+			canDownload: false,
+		},
+		// TODO: we need to call GetFile or GetDirectory from the get-go... not sure how to support both
+		// "get zipped directory": {
+		// 	url:         "./testdata/repo/zip_directory/autod.zip",
+		// 	canDownload: true,
+		// 	validBinary: true,
+		// },
+		"invalid url": {
+			url:         "./testdata/repo/bad_dir/autod",
+			canDownload: false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			// make temp dir
+			home, err := copyTestData("download")
+			require.NoError(t, err)
+			defer os.RemoveAll(home)
+
+			cfg := &Config{
+				Home:                  home,
+				Name:                  "autod",
+				AllowDownloadBinaries: true,
+			}
+
+			// if we have a relative path, make it absolute, but don't change eg. https://... urls
+			url := tc.url
+			if strings.HasPrefix(url, "./") {
+				url, err = filepath.Abs(url)
+				require.NoError(t, err)
+			}
+
+			upgrade := "amazonas"
+			info := &UpgradeInfo{
+				Name:   upgrade,
+				Height: 789,
+				Info:   fmt.Sprintf(`{"binaries":{"%s": "%s"}}`, osArch(), url),
+			}
+
+			err = DownloadBinary(cfg, info)
+			if !tc.canDownload {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			err = EnsureBinary(cfg.UpgradeBin(upgrade))
+			if tc.validBinary {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
 			}
 		})
 	}

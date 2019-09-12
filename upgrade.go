@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -93,9 +94,30 @@ type UpgradeConfig struct {
 
 // GetDownloadURL will check if there is an arch-dependent binary specified in Info
 func GetDownloadURL(info *UpgradeInfo) (string, error) {
+	doc := info.Info
+	// if this is a url, then we download that and try to get a new doc with the real info
+	if _, err := url.Parse(doc); err == nil {
+		tmpDir, err := ioutil.TempDir("", "upgrade-manager-reference")
+		if err != nil {
+			return "", errors.Wrap(err, "create tempdir for reference file")
+		}
+		defer os.RemoveAll(tmpDir)
+		refPath := filepath.Join(tmpDir, "ref")
+		err = getter.GetFile(refPath, doc)
+		if err != nil {
+			return "", errors.Wrapf(err, "downloading reference link %s", doc)
+		}
+		refBytes, err := ioutil.ReadFile(refPath)
+		if err != nil {
+			return "", errors.Wrap(err, "reading downloaded reference")
+		}
+		// if download worked properly, then we use this new file as the binary map to parse
+		doc = string(refBytes)
+	}
+
 	// check if it is the upgrade config
 	var config UpgradeConfig
-	err := json.Unmarshal([]byte(info.Info), &config)
+	err := json.Unmarshal([]byte(doc), &config)
 	if err == nil {
 		url, ok := config.Binaries[osArch()]
 		if !ok {
@@ -104,7 +126,6 @@ func GetDownloadURL(info *UpgradeInfo) (string, error) {
 		return url, nil
 	}
 
-	// TODO: download file then parse that
 	return "", errors.New("upgrade info doesn't contain binary map")
 }
 

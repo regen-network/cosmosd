@@ -1,5 +1,5 @@
 {
     "binaries": {
-        "amd64/linux": "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7"
+        "linux/amd64": "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7"
     }
 }

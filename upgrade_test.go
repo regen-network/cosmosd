@@ -125,12 +125,21 @@ func TestDownloadBinary(t *testing.T) {
 			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:73e2bd6cbb99261733caf137015d5cc58e3f96248d8b01da68be8564989dd906",
 			canDownload: false,
 		},
-		// TODO: we need to call GetFile or GetDirectory from the get-go... not sure how to support both
-		// "get zipped directory": {
-		// 	url:         "./testdata/repo/zip_directory/autod.zip",
-		// 	canDownload: true,
-		// 	validBinary: true,
-		// },
+		"get zipped directory": {
+			url:         "./testdata/repo/zip_directory/autod.zip",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get zipped directory with valid checksum": {
+			// TODO: not sure how to calculate this - this is from go-getter, but differs than hashalot.sha256 digest
+			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get zipped directory with invalid checksum": {
+			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:73e2bd6cbb99261733caf137015d5cc58e3f96248d8b01da68be8564989dd906",
+			canDownload: false,
+		},
 		"invalid url": {
 			url:         "./testdata/repo/bad_dir/autod",
 			canDownload: false,

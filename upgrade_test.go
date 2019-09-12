@@ -65,6 +65,43 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 	}
 }
 
+func TestOsArch(t *testing.T) {
+	// all other tests will fail if we are not on linux...
+	assert.Equal(t, "linux/amd64", osArch())
+}
+
+func TestGetDownloadURL(t *testing.T) {
+	cases := map[string]struct {
+		info  string
+		url   string
+		isErr bool
+	}{
+		"missing": {
+			isErr: true,
+		},
+		"bad format": {
+			info:  "https://foo.bar/",
+			isErr: true,
+		},
+		"proper binary": {
+			info: `{"binaries": {"linux/amd64": "https://foo.bar/", "windows/amd64": "https://something.else"}}`,
+			url:  "https://foo.bar/",
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			url, err := GetDownloadURL(&UpgradeInfo{Info: tc.info})
+			if tc.isErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.url, url)
+			}
+		})
+	}
+}
+
 // copyTestData will make a tempdir and then
 // "cp -r" a subdirectory under testdata there
 // returns the directory (which can now be used as Config.Home) and modified safely

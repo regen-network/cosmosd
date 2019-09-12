@@ -116,7 +116,7 @@ func TestDownloadBinary(t *testing.T) {
 			validBinary: true,
 		},
 		"get raw binary with checksum": {
-			// TODO: not sure how to calculate this - this is from go-getter, but differs than hashalot.sha256 digest
+			// sha256sum ./testdata/repo/raw_binary/autod
 			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:e6bc7851600a2a9917f7bf88eb7bdee1ec162c671101485690b4deb089077b0d",
 			canDownload: true,
 			validBinary: true,
@@ -131,7 +131,7 @@ func TestDownloadBinary(t *testing.T) {
 			validBinary: true,
 		},
 		"get zipped directory with valid checksum": {
-			// TODO: not sure how to calculate this - this is from go-getter, but differs than hashalot.sha256 digest
+			// sha256sum ./testdata/repo/zip_directory/autod.zip
 			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
 			canDownload: true,
 			validBinary: true,

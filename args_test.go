@@ -7,9 +7,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// Note all tests use the / path separator for simplicity and will fail on windows.
-// The actual code should work on windows... probably (not sure about process stuff)
-
 func TestConfigPaths(t *testing.T) {
 	cases := map[string]struct {
 		cfg           Config
@@ -36,9 +33,9 @@ func TestConfigPaths(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.cfg.Root(), tc.expectRoot)
-			assert.Equal(t, tc.cfg.GenesisBin(), tc.expectGenesis)
-			assert.Equal(t, tc.cfg.UpgradeBin(tc.upgradeName), tc.expectUpgrade)
+			assert.Equal(t, tc.cfg.Root(), filepath.FromSlash(tc.expectRoot))
+			assert.Equal(t, tc.cfg.GenesisBin(), filepath.FromSlash(tc.expectGenesis))
+			assert.Equal(t, tc.cfg.UpgradeBin(tc.upgradeName), filepath.FromSlash(tc.expectUpgrade))
 		})
 	}
 }
@@ -61,7 +58,7 @@ func TestValidate(t *testing.T) {
 			valid: true,
 		},
 		"happy with download": {
-			cfg:   Config{Home: absPath, Name: "bind", Download: true},
+			cfg:   Config{Home: absPath, Name: "bind", AllowDownloadBinaries: true},
 			valid: true,
 		},
 		"missing home": {
@@ -81,7 +78,7 @@ func TestValidate(t *testing.T) {
 			valid: false,
 		},
 		"no such dir": {
-			cfg:   Config{Home: "/no/such/dir", Name: "bind"},
+			cfg:   Config{Home: filepath.FromSlash("/no/such/dir"), Name: "bind"},
 			valid: false,
 		},
 	}
@@ -130,5 +127,3 @@ func TestEnsureBin(t *testing.T) {
 		})
 	}
 }
-
-// TODO: test CurrentBin/SetCurrentBin

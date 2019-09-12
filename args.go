@@ -17,9 +17,9 @@ const (
 
 // Config is the information passed in to control the daemon
 type Config struct {
-	Home     string
-	Name     string
-	Download bool
+	Home                  string
+	Name                  string
+	AllowDownloadBinaries bool
 }
 
 // Root returns the root directory where all info lives
@@ -74,8 +74,8 @@ func GetConfigFromEnv() (*Config, error) {
 		Home: os.Getenv("DAEMON_HOME"),
 		Name: os.Getenv("DAEMON_NAME"),
 	}
-	if os.Getenv("DAEMON_DOWNLOAD") == "on" {
-		cfg.Download = true
+	if os.Getenv("DAEMON_ALLOW_DOWNLOAD_BINARIES") == "on" {
+		cfg.AllowDownloadBinaries = true
 	}
 	if err := cfg.validate(); err != nil {
 		return nil, err

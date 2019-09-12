@@ -14,7 +14,7 @@ import (
 
 // DoUpgrade will be called after the log message has been parsed and the process has terminated.
 // We can now make any changes to the underlying directory without interferance and leave it
-// in a state the will make a proper restart
+// in a state, so we can make a proper restart
 func DoUpgrade(cfg *Config, info *UpgradeInfo) error {
 	err := EnsureBinary(cfg.UpgradeBin(info.Name))
 
@@ -25,7 +25,7 @@ func DoUpgrade(cfg *Config, info *UpgradeInfo) error {
 	}
 
 	// if auto-download is disabled, we fail
-	if !cfg.Download {
+	if !cfg.AllowDownloadBinaries {
 		return errors.Wrap(err, "binary not present, downloading disabled")
 	}
 	// if the dir is there already, don't download either

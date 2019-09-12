@@ -21,7 +21,7 @@ Configuration will be passed in the followingenvironmental variables:
 * `DAEMON_HOME` is the location where upgrade binaries should be kept (can
 be `$HOME/.gaiad` or `$HOME/.xrnd`)
 * `DAEMON_NAME` is the name of the binary itself (eg. `xrnd`, `gaiad`)
-* `DAEMON_DOWNLOAD` (optional) if set to `on` will enable auto-downloading of new binaries
+* `DAEMON_ALLOW_DOWNLOAD_BINARIES` (optional) if set to `on` will enable auto-downloading of new binaries
 (for security reasons, this is intended for fullnodes rather than validators)
 
 ## Folder Layout
@@ -102,7 +102,7 @@ on the disk before the upgrade happens. However, for people who don't need such
 control and want an easier setup (maybe they are syncing a non-validating fullnode
 and want to  do little maintenance), there is another option.
 
-If you set `DAEMON_DOWNLOAD=on` then when an upgrade is triggered and no local binary
+If you set `DAEMON_ALLOW_DOWNLOAD_BINARIES=on` then when an upgrade is triggered and no local binary
 can be found, the upgrade_manager will attempt to download and install the binary itself.
 The plan stored in the upgrade module has an info field for arbitrary json.
 This info is expected to be outputed on the halt log message. There are two
@@ -125,7 +125,7 @@ e.g `https://example.com/testnet-1001-info.json?checksum=sha256:deaaa99fda9407c4
 This file contained in link will be retrieved by [go-getter](https://github.com/hashicorp/go-getter) 
 and the "binaries" field will be parsed as above.
 
-If there is no local binary, `DAEMON_DOWNLOAD=on`, and we can access a canonical url for the new binary,
+If there is no local binary, `DAEMON_ALLOW_DOWNLOAD_BINARIES=on`, and we can access a canonical url for the new binary,
 then the upgrade_manager will download it with [go-getter](https://github.com/hashicorp/go-getter) and
 unpack it into the `upgrades/<name>` folder to be run as if we installed it manually
 

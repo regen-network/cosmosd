@@ -43,7 +43,7 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 	require.NoError(t, err)
 	defer os.RemoveAll(home)
 
-	cfg := &Config{Home: home, Name: "dummyd", Download: true}
+	cfg := &Config{Home: home, Name: "dummyd", AllowDownloadBinaries: true}
 	assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
 
 	// do upgrade ignores bad files

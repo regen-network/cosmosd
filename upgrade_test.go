@@ -73,6 +73,11 @@ func TestOsArch(t *testing.T) {
 }
 
 func TestGetDownloadURL(t *testing.T) {
+	ref, err := filepath.Abs(filepath.FromSlash("./testdata/repo/ref_zipped"))
+	require.NoError(t, err)
+	badref, err := filepath.Abs(filepath.FromSlash("./testdata/repo/zip_binary/autod.zip"))
+	require.NoError(t, err)
+
 	cases := map[string]struct {
 		info  string
 		url   string
@@ -81,13 +86,25 @@ func TestGetDownloadURL(t *testing.T) {
 		"missing": {
 			isErr: true,
 		},
-		"bad format": {
-			info:  "https://foo.bar/",
+		"follow reference": {
+			info: ref,
+			url:  "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+		},
+		"malformated refernece target": {
+			info:  badref,
+			isErr: true,
+		},
+		"missing link": {
+			info:  "https://no.such.domain/exists.txt",
 			isErr: true,
 		},
 		"proper binary": {
 			info: `{"binaries": {"linux/amd64": "https://foo.bar/", "windows/amd64": "https://something.else"}}`,
 			url:  "https://foo.bar/",
+		},
+		"missing binary": {
+			info:  `{"binaries": {"linux/arm": "https://foo.bar/"}}`,
+			isErr: true,
 		},
 	}
 

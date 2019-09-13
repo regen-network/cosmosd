@@ -1,0 +1,7 @@
+#!/bin/sh
+
+echo Chain 2 from zipped binary link to referal
+echo Args: $@
+# note that we just have a url (follow the ref), not a full link
+echo 'UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/ref_zipped?checksum=sha256:59708d1142dfd3f9d6ffafecd7f89c641d982c9d5d999d86b211a1a736f114ad'
+sleep 2

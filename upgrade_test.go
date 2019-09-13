@@ -1,9 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/homedepot/flop"
@@ -62,6 +64,146 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 		require.NoError(t, err)
 		// we should see current point to the new upgrade dir
 		assert.Equal(t, cfg.UpgradeBin(upgrade), cfg.CurrentBin())
+	}
+}
+
+func TestOsArch(t *testing.T) {
+	// all download tests will fail if we are not on linux...
+	assert.Equal(t, "linux/amd64", osArch())
+}
+
+func TestGetDownloadURL(t *testing.T) {
+	ref, err := filepath.Abs(filepath.FromSlash("./testdata/repo/ref_zipped"))
+	require.NoError(t, err)
+	badref, err := filepath.Abs(filepath.FromSlash("./testdata/repo/zip_binary/autod.zip"))
+	require.NoError(t, err)
+
+	cases := map[string]struct {
+		info  string
+		url   string
+		isErr bool
+	}{
+		"missing": {
+			isErr: true,
+		},
+		"follow reference": {
+			info: ref,
+			url:  "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+		},
+		"malformated refernece target": {
+			info:  badref,
+			isErr: true,
+		},
+		"missing link": {
+			info:  "https://no.such.domain/exists.txt",
+			isErr: true,
+		},
+		"proper binary": {
+			info: `{"binaries": {"linux/amd64": "https://foo.bar/", "windows/amd64": "https://something.else"}}`,
+			url:  "https://foo.bar/",
+		},
+		"missing binary": {
+			info:  `{"binaries": {"linux/arm": "https://foo.bar/"}}`,
+			isErr: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			url, err := GetDownloadURL(&UpgradeInfo{Info: tc.info})
+			if tc.isErr {
+				assert.Error(t, err)
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.url, url)
+			}
+		})
+	}
+}
+
+func TestDownloadBinary(t *testing.T) {
+	cases := map[string]struct {
+		url         string
+		canDownload bool
+		validBinary bool
+	}{
+		"get raw binary": {
+			url:         "./testdata/repo/raw_binary/autod",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get raw binary with checksum": {
+			// sha256sum ./testdata/repo/raw_binary/autod
+			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:e6bc7851600a2a9917f7bf88eb7bdee1ec162c671101485690b4deb089077b0d",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get raw binary with invalid checksum": {
+			url:         "./testdata/repo/raw_binary/autod?checksum=sha256:73e2bd6cbb99261733caf137015d5cc58e3f96248d8b01da68be8564989dd906",
+			canDownload: false,
+		},
+		"get zipped directory": {
+			url:         "./testdata/repo/zip_directory/autod.zip",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get zipped directory with valid checksum": {
+			// sha256sum ./testdata/repo/zip_directory/autod.zip
+			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+			canDownload: true,
+			validBinary: true,
+		},
+		"get zipped directory with invalid checksum": {
+			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:73e2bd6cbb99261733caf137015d5cc58e3f96248d8b01da68be8564989dd906",
+			canDownload: false,
+		},
+		"invalid url": {
+			url:         "./testdata/repo/bad_dir/autod",
+			canDownload: false,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			// make temp dir
+			home, err := copyTestData("download")
+			require.NoError(t, err)
+			defer os.RemoveAll(home)
+
+			cfg := &Config{
+				Home:                  home,
+				Name:                  "autod",
+				AllowDownloadBinaries: true,
+			}
+
+			// if we have a relative path, make it absolute, but don't change eg. https://... urls
+			url := tc.url
+			if strings.HasPrefix(url, "./") {
+				url, err = filepath.Abs(url)
+				require.NoError(t, err)
+			}
+
+			upgrade := "amazonas"
+			info := &UpgradeInfo{
+				Name:   upgrade,
+				Height: 789,
+				Info:   fmt.Sprintf(`{"binaries":{"%s": "%s"}}`, osArch(), url),
+			}
+
+			err = DownloadBinary(cfg, info)
+			if !tc.canDownload {
+				assert.Error(t, err)
+				return
+			}
+			require.NoError(t, err)
+
+			err = EnsureBinary(cfg.UpgradeBin(upgrade))
+			if tc.validBinary {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
 	}
 }
 

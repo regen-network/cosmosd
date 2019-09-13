@@ -26,4 +26,9 @@ jobs:
           destination: raw-test-output
       - store_test_results:
           path: /tmp/test-results
+  workflows:
+    version: 2
+    build-workflow:
+      jobs:
+        - build
 

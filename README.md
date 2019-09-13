@@ -1,5 +1,7 @@
 # Cosmos Upgrade Manager
 
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 This is a tiny little shim around Cosmos SDK binaries that use the upgrade
 module that allows for smooth and configurable management of upgrading
 binaries as a live chain is upgraded, and can be used to simplify validator

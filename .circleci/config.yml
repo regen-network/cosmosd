@@ -8,6 +8,7 @@ jobs:
     working_directory: /go/src/github.com/regen-network/cosmos-upgrade-manager
     environment:
       TEST_RESULTS: /tmp/test-results
+      CODECOV_TOKEN: "b9cd3f1e-5d65-4554-8eb9-292ef46298dc"
     steps:
       - checkout
       - run: mkdir -p $TEST_RESULTS # create the test results directory

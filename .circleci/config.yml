@@ -21,7 +21,7 @@ jobs:
           name: test
           command: |
             PACKAGE_NAMES=$(go list ./... | circleci tests split --split-by=timings --timings-type=classname)
-            gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -coverprofile=${TEST_RESULTS}/cover.out -- $PACKAGE_NAMES
+            gotestsum --junitfile ${TEST_RESULTS}/gotestsum-report.xml -- -coverprofile=${TEST_RESULTS}/cover.out $PACKAGE_NAMES
             go tool cover -html=${TEST_RESULTS}/cover.out -o ${TEST_RESULTS}/coverage.html
       - save_cache:
           key: go-mod-v4-{{ checksum "go.sum" }}

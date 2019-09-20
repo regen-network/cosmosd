@@ -89,3 +89,4 @@ fabric.properties
 .idea/
 
 cosmos-upgrade-manager
+coverage

@@ -26,11 +26,11 @@ func TestWaitForInfo(t *testing.T) {
 			},
 		},
 		"chunks": {
-			write: []string{"first l", "ine\nERROR 2020-02-03T11:22:33Z: UPGRADE ", `"split" NEEDED at height `, "789:   {\"foo\": 123}", "  \n LOG: next line"},
+			write: []string{"first l", "ine\nERROR 2020-02-03T11:22:33Z: UPGRADE ", `"split" NEEDED at height `, "789:   {\"foo\":123} asgsdg", "  \n LOG: next line"},
 			expectUpgrade: &UpgradeInfo{
 				Name:   "split",
 				Height: 789,
-				Info:   `{"foo": 123}`,
+				Info:   `{"foo":123}`,
 			},
 		},
 	}

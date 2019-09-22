@@ -70,7 +70,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Equal(t, "Chain 2 from zipped binary link to referal\nArgs: run --fast\n"+`UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/ref_zipped?checksum=sha256:59708d1142dfd3f9d6ffafecd7f89c641d982c9d5d999d86b211a1a736f114ad module=main`+"\n", stdout.String())
+	assert.Equal(t, "Chain 2 from zipped binary link to referal\nArgs: run --fast\n"+`UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/ref_zipped?checksum=sha256:59708d1142dfd3f9d6ffafecd7f89c641d982c9d5d999d86b211a1a736f114ad`+"\n", stdout.String())
 
 	// ended with one more upgrade
 	require.Equal(t, cfg.UpgradeBin("chain3"), cfg.CurrentBin())

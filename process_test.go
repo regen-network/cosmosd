@@ -60,7 +60,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Equal(t, "ERROR: Preparing auto-download some args\n"+`UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_binary/autod.zip?checksum=sha256:1517886fb44425c30571316fcbd6380b38f80fb3dbaadc5ecd3303046b43b0cc"}} module=main`+"\n", stdout.String())
+	assert.Equal(t, "Preparing auto-download some args\n"+`ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/aaronc/download-url-fix/testdata/repo/zip_binary/autod.zip?checksum=sha256:cd068fe57b101bccbf2c6f8c63df5d7586137c362ed1601e54d75085c47b5287"}} module=main`+"\n", stdout.String())
 
 	// ensure this is upgraded now and produces new output
 	require.Equal(t, cfg.UpgradeBin("chain2"), cfg.CurrentBin())

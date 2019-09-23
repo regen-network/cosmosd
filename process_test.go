@@ -60,7 +60,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Equal(t, "Preparing auto-download some args\n"+`ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/aaronc/download-url-fix/testdata/repo/zip_binary/autod.zip?checksum=sha256:cd068fe57b101bccbf2c6f8c63df5d7586137c362ed1601e54d75085c47b5287"}} module=main`+"\n", stdout.String())
+	assert.Equal(t, "Preparing auto-download some args\n"+`ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/master/testdata/repo/zip_binary/autod.zip?checksum=sha256:c65bf35334f0d8573ed1df39abf9dde5e81b93433a0242a87e1d197758c2b3db"}} module=main`+"\n", stdout.String())
 
 	// ensure this is upgraded now and produces new output
 	require.Equal(t, cfg.UpgradeBin("chain2"), cfg.CurrentBin())
@@ -70,7 +70,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
-	assert.Equal(t, "Chain 2 from zipped binary link to referal\nArgs: run --fast\n"+`UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/ref_zipped?checksum=sha256:59708d1142dfd3f9d6ffafecd7f89c641d982c9d5d999d86b211a1a736f114ad`+"\n", stdout.String())
+	assert.Equal(t, "Chain 2 from zipped binary link to referal\nArgs: run --fast\n"+`ERROR: UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmosd/raw/master/testdata/repo/ref_zipped?checksum=sha256:3dbb59e823d03550ce1166337139f97e06fd33098d6c83467a2c49ee53cfa3ef module=main`+"\n", stdout.String())
 
 	// ended with one more upgrade
 	require.Equal(t, cfg.UpgradeBin("chain3"), cfg.CurrentBin())

@@ -88,7 +88,7 @@ func TestGetDownloadURL(t *testing.T) {
 		},
 		"follow reference": {
 			info: ref,
-			url:  "https://github.com/regen-network/cosmos-upgrade-manager/raw/auto-download/testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+			url:  "https://github.com/regen-network/cosmosd/raw/master/testdata/repo/zip_directory/autod.zip?checksum=sha256:3784e4574cad69b67e34d4ea4425eff140063a3870270a301d6bb24a098a27ae",
 		},
 		"malformated refernece target": {
 			info:  badref,
@@ -149,7 +149,7 @@ func TestDownloadBinary(t *testing.T) {
 		},
 		"get zipped directory with valid checksum": {
 			// sha256sum ./testdata/repo/zip_directory/autod.zip
-			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:29139e1381b8177aec909fab9a75d11381cab5adf7d3af0c05ff1c9c117743a7",
+			url:         "./testdata/repo/zip_directory/autod.zip?checksum=sha256:3784e4574cad69b67e34d4ea4425eff140063a3870270a301d6bb24a098a27ae",
 			canDownload: true,
 			validBinary: true,
 		},

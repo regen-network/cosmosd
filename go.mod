@@ -1,4 +1,4 @@
-module github.com/regen-network/cosmos-upgrade-manager
+module github.com/regen-network/cosmosd
 
 go 1.12
 

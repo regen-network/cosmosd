@@ -9,7 +9,7 @@ import (
 )
 
 // Trim off whitespace around the info - match least greedy, grab as much space on both sides
-var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):\s+([^\s]*)\s*.*$`)
+var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):\s+([^\s]*)`)
 
 // UpgradeInfo is the details from the regexp
 type UpgradeInfo struct {

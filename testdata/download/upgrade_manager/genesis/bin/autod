@@ -2,6 +2,6 @@
 
 echo Preparing auto-download $@
 sleep 1
-echo 'ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/aaronc/download-url-fix/testdata/repo/zip_binary/autod.zip?checksum=sha256:cd068fe57b101bccbf2c6f8c63df5d7586137c362ed1601e54d75085c47b5287"}} module=main'
-sleep 2
+echo 'ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/master/testdata/repo/zip_binary/autod.zip?checksum=sha256:9aa773e9a35e0920d346e0e62553705ade40d432ca35407061f164e2b394d4b5"}} module=main'
+sleep 4
 echo Never should be printed!!!

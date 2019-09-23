@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	getter "github.com/hashicorp/go-getter"
 	"github.com/pkg/errors"
@@ -94,7 +95,7 @@ type UpgradeConfig struct {
 
 // GetDownloadURL will check if there is an arch-dependent binary specified in Info
 func GetDownloadURL(info *UpgradeInfo) (string, error) {
-	doc := info.Info
+	doc := strings.TrimSpace(info.Info)
 	// if this is a url, then we download that and try to get a new doc with the real info
 	if _, err := url.Parse(doc); err == nil {
 		tmpDir, err := ioutil.TempDir("", "upgrade-manager-reference")

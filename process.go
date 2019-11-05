@@ -99,7 +99,7 @@ func WaitForUpgradeOrExit(cmd *exec.Cmd, scanOut, scanErr *bufio.Scanner) (*Upgr
 	var res WaitResult
 
 	waitScan := func(scan *bufio.Scanner) {
-		upgrade, err := WaitForUpdate(scanOut)
+		upgrade, err := WaitForUpdate(scan)
 		if err != nil {
 			res.SetError(err)
 		} else if upgrade != nil {

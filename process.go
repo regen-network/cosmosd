@@ -13,9 +13,11 @@ import (
 // LaunchProcess runs a subprocess and returns when the subprocess exits,
 // either when it dies, or *after* a successful upgrade.
 func LaunchProcess(cfg *Config, args []string, stdout, stderr io.Writer) (bool, error) {
-	bin := cfg.CurrentBin()
-
-	err := EnsureBinary(bin)
+	bin, err := cfg.CurrentBin()
+	if err != nil {
+		return false, errors.Wrap(err, "error creating symlink to genesis")
+	}
+	err = EnsureBinary(bin)
 	if err != nil {
 		return false, errors.Wrap(err, "current binary invalid")
 	}

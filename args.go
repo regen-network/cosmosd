@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 const (
@@ -46,84 +45,44 @@ func (cfg *Config) UpgradeDir(upgradeName string) string {
 }
 
 //Symbolinking to genesis
-func (cfg *Config) SymLinkToGenesis() string  {
+func (cfg *Config) SymLinkToGenesis() (string, error) {
 	genesisBin := cfg.GenesisBin()
+	link := filepath.Join(cfg.Root(), currentLink)
 
-	info, err := os.Lstat(genesisBin)
-	if err != nil {
-		return ""
+	if err := os.Symlink(genesisBin, link); err != nil {
+		return "", err
 	}
-
-	// if it is there, ensure it is a symlink
-	if info.Mode()&os.ModeSymlink == 0 {
-		return ""
-	}
-
-	// resolve it
-	dest, err := os.Readlink(genesisBin)
-	if err != nil {
-		return ""
-	}
-
-	genBinary := filepath.Join(dest, "bin", cfg.Name)
-
-	//Write current binary to file
-	WriteToFile(genBinary)
-
 	// and return the genesis binary
-	return genBinary
+	return genesisBin , nil
 }
 
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
 // This will resolve the symlink to the underlying directory to make it easier to debug
-func (cfg *Config) CurrentBin() string {
+func (cfg *Config) CurrentBin() (string, error) {
 	cur := filepath.Join(cfg.Root(), currentLink)
 	// if nothing here, fallback to genesis
 	info, err := os.Lstat(cur)
 	if err != nil {
-		//Create symbolink to the genesis
+		//Create symlink to the genesis
 		return cfg.SymLinkToGenesis()
 	}
 	// if it is there, ensure it is a symlink
 	if info.Mode()&os.ModeSymlink == 0 {
-		//Create symbolink to the genesis
+		//Create symlink to the genesis
 		return cfg.SymLinkToGenesis()
 	}
 
 	// resolve it
 	dest, err := os.Readlink(cur)
 	if err != nil {
-		//Create symbolink to the genesis
+		//Create symlink to the genesis
 		return cfg.SymLinkToGenesis()
 	}
 
 	curBin := filepath.Join(dest, "bin", cfg.Name)
 
-	//Write current binary to file
-	WriteToFile(curBin)
-
 	// and return the binary
-	return curBin
-}
-
-func WriteToFile(path string) {
-	//Create the file
-	f, err := os.Create("symLinkPath.txt")
-	if err != nil {
-		fmt.Printf("Error while creating file %v", err)
-		return
-	}
-
-	//Write the path to the file
-	_, err = f.WriteString(path)
-
-	if err != nil {
-		fmt.Printf("Error while writing to file %v", err)
-
-		f.Close()
-		return
-	}
-	return
+	return curBin, nil
 }
 
 // GetConfigFromEnv will read the environmental variables into a config

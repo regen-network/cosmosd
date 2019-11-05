@@ -50,6 +50,39 @@ func TestCurrentBin(t *testing.T) {
 	}
 }
 
+func TestCurrentAlwaysSymlinkToDirectory(t *testing.T) {
+	home, err := copyTestData("validate")
+	require.NoError(t, err)
+	defer os.RemoveAll(home)
+
+	cfg := Config{Home: home, Name: "dummyd"}
+
+	currentBin, err := cfg.CurrentBin()
+	require.NoError(t, err)
+	assert.Equal(t, cfg.GenesisBin(), currentBin)
+	assertCurrentLink(t, cfg, "genesis")
+
+	err = cfg.SetCurrentUpgrade("chain2")
+	require.NoError(t, err)
+	currentBin, err = cfg.CurrentBin()
+	require.NoError(t, err)
+	assert.Equal(t, cfg.UpgradeBin("chain2"), currentBin)
+	assertCurrentLink(t, cfg, filepath.Join("upgrades", "chain2"))
+}
+
+func assertCurrentLink(t *testing.T, cfg Config, target string) {
+	link := filepath.Join(cfg.Root(), currentLink)
+	// ensure this is a symlink
+	info, err := os.Lstat(link)
+	require.NoError(t, err)
+	require.Equal(t, os.ModeSymlink, info.Mode()&os.ModeSymlink)
+
+	dest, err := os.Readlink(link)
+	require.NoError(t, err)
+	expected := filepath.Join(cfg.Root(), target)
+	require.Equal(t, expected, dest)
+}
+
 // TODO: test with download (and test all download functions)
 func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 	home, err := copyTestData("validate")

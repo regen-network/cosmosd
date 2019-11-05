@@ -44,7 +44,7 @@ func (cfg *Config) UpgradeDir(upgradeName string) string {
 	return filepath.Join(cfg.Root(), upgradesDir, safeName)
 }
 
-//Symbolinking to genesis
+// Symlink to genesis
 func (cfg *Config) SymLinkToGenesis() (string, error) {
 	genesisBin := cfg.GenesisBin()
 	link := filepath.Join(cfg.Root(), currentLink)
@@ -53,7 +53,7 @@ func (cfg *Config) SymLinkToGenesis() (string, error) {
 		return "", err
 	}
 	// and return the genesis binary
-	return genesisBin , nil
+	return genesisBin, nil
 }
 
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
@@ -79,10 +79,14 @@ func (cfg *Config) CurrentBin() (string, error) {
 		return cfg.SymLinkToGenesis()
 	}
 
-	curBin := filepath.Join(dest, "bin", cfg.Name)
+	genBin := cfg.GenesisBin()
+
+	if dest != genBin {
+		dest = filepath.Join(dest, "bin", cfg.Name)
+	}
 
 	// and return the binary
-	return curBin, nil
+	return dest, nil
 }
 
 // GetConfigFromEnv will read the environmental variables into a config

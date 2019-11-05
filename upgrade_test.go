@@ -20,13 +20,21 @@ func TestCurrentBin(t *testing.T) {
 	defer os.RemoveAll(home)
 
 	cfg := Config{Home: home, Name: "dummyd"}
-	assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
+
+	currentBin, err := cfg.CurrentBin()
+	require.NoError(t, err)
+
+	assert.Equal(t, cfg.GenesisBin(), currentBin)
 
 	// ensure we cannot set this to an invalid value
 	for _, name := range []string{"missing", "nobin", "noexec"} {
 		err = cfg.SetCurrentUpgrade(name)
 		require.Error(t, err, name)
-		assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin(), name)
+
+		currentBin, err := cfg.CurrentBin()
+		require.NoError(t, err)
+
+		assert.Equal(t, cfg.GenesisBin(), currentBin, name)
 	}
 
 	// try a few times to make sure this can be reproduced
@@ -35,7 +43,10 @@ func TestCurrentBin(t *testing.T) {
 		err = cfg.SetCurrentUpgrade(upgrade)
 		require.NoError(t, err)
 		// we should see current point to the new upgrade dir
-		assert.Equal(t, cfg.UpgradeBin(upgrade), cfg.CurrentBin())
+		currentBin, err := cfg.CurrentBin()
+		require.NoError(t, err)
+
+		assert.Equal(t, cfg.UpgradeBin(upgrade), currentBin)
 	}
 }
 
@@ -46,14 +57,20 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 	defer os.RemoveAll(home)
 
 	cfg := &Config{Home: home, Name: "dummyd", AllowDownloadBinaries: true}
-	assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
+
+	currentBin, err := cfg.CurrentBin()
+	require.NoError(t, err)
+
+	assert.Equal(t, cfg.GenesisBin(), currentBin)
 
 	// do upgrade ignores bad files
 	for _, name := range []string{"missing", "nobin", "noexec"} {
 		info := &UpgradeInfo{Name: name}
 		err = DoUpgrade(cfg, info)
 		require.Error(t, err, name)
-		assert.Equal(t, cfg.GenesisBin(), cfg.CurrentBin(), name)
+		currentBin, err := cfg.CurrentBin()
+		require.NoError(t, err)
+		assert.Equal(t, cfg.GenesisBin(), currentBin, name)
 	}
 
 	// make sure it updates a few times
@@ -63,7 +80,11 @@ func TestDoUpgradeNoDownloadUrl(t *testing.T) {
 		err = DoUpgrade(cfg, info)
 		require.NoError(t, err)
 		// we should see current point to the new upgrade dir
-		assert.Equal(t, cfg.UpgradeBin(upgrade), cfg.CurrentBin())
+		upgradeBin := cfg.UpgradeBin(upgrade)
+		currentBin, err := cfg.CurrentBin()
+		require.NoError(t, err)
+
+		assert.Equal(t, upgradeBin, currentBin)
 	}
 }
 
@@ -217,6 +238,7 @@ func copyTestData(subdir string) (string, error) {
 	}
 
 	src := filepath.Join("testdata", subdir)
+
 	options := flop.Options{
 		Recursive: true,
 		// this is set as workaround for https://github.com/homedepot/flop/issues/17

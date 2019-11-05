@@ -46,14 +46,14 @@ func (cfg *Config) UpgradeDir(upgradeName string) string {
 
 // Symlink to genesis
 func (cfg *Config) SymLinkToGenesis() (string, error) {
-	genesisBin := cfg.GenesisBin()
+	genesis := filepath.Join(cfg.Root(), genesisDir)
 	link := filepath.Join(cfg.Root(), currentLink)
 
-	if err := os.Symlink(genesisBin, link); err != nil {
+	if err := os.Symlink(genesis, link); err != nil {
 		return "", err
 	}
 	// and return the genesis binary
-	return genesisBin, nil
+	return cfg.GenesisBin(), nil
 }
 
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
@@ -79,13 +79,8 @@ func (cfg *Config) CurrentBin() (string, error) {
 		return cfg.SymLinkToGenesis()
 	}
 
-	genBin := cfg.GenesisBin()
-
-	if dest != genBin {
-		dest = filepath.Join(dest, "bin", cfg.Name)
-	}
-
 	// and return the binary
+	dest = filepath.Join(dest, "bin", cfg.Name)
 	return dest, nil
 }
 

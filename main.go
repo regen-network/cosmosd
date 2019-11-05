@@ -23,7 +23,7 @@ func Run(args []string) error {
 
 	// if RestartAfterUpgrade, we launch after a successful upgrade (only condition LaunchProcess returns nil)
 	for cfg.RestartAfterUpgrade && err == nil && doUpgrade {
-		_, err = LaunchProcess(cfg, args, os.Stdout, os.Stderr)
+		doUpgrade, err = LaunchProcess(cfg, args, os.Stdout, os.Stderr)
 	}
 	return err
 }

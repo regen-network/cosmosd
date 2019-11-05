@@ -21,7 +21,7 @@ func TestLaunchProcess(t *testing.T) {
 	require.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
 	var stdout, stderr bytes.Buffer
 	args := []string{"foo", "bar", "1234"}
-	err = LaunchProcess(cfg, args, &stdout, &stderr)
+	_,err = LaunchProcess(cfg, args, &stdout, &stderr)
 	// err = LaunchProcess(cfg, args, os.Stdout, os.Stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
@@ -32,7 +32,7 @@ func TestLaunchProcess(t *testing.T) {
 	args = []string{"second", "run", "--verbose"}
 	stdout.Reset()
 	stderr.Reset()
-	err = LaunchProcess(cfg, args, &stdout, &stderr)
+	_,err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, "Chain 2 is live!\nArgs: second run --verbose\nFinished successfully\n", stdout.String())
@@ -57,7 +57,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	require.Equal(t, cfg.GenesisBin(), cfg.CurrentBin())
 	var stdout, stderr bytes.Buffer
 	args := []string{"some", "args"}
-	err = LaunchProcess(cfg, args, &stdout, &stderr)
+	_,err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, "Preparing auto-download some args\n"+`ERROR: UPGRADE "chain2" NEEDED at height 49: {"binaries":{"linux/amd64":"https://github.com/regen-network/cosmosd/raw/master/testdata/repo/zip_binary/autod.zip?checksum=sha256:c65bf35334f0d8573ed1df39abf9dde5e81b93433a0242a87e1d197758c2b3db"}} module=main`+"\n", stdout.String())
@@ -67,7 +67,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	args = []string{"run", "--fast"}
 	stdout.Reset()
 	stderr.Reset()
-	err = LaunchProcess(cfg, args, &stdout, &stderr)
+	_,err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, "Chain 2 from zipped binary link to referal\nArgs: run --fast\n"+`ERROR: UPGRADE "chain3" NEEDED at height 936: https://github.com/regen-network/cosmosd/raw/master/testdata/repo/ref_zipped?checksum=sha256:3dbb59e823d03550ce1166337139f97e06fd33098d6c83467a2c49ee53cfa3ef module=main`+"\n", stdout.String())
@@ -78,7 +78,7 @@ func TestLaunchProcessWithDownloads(t *testing.T) {
 	args = []string{"end", "--halt"}
 	stdout.Reset()
 	stderr.Reset()
-	err = LaunchProcess(cfg, args, &stdout, &stderr)
+	_,err = LaunchProcess(cfg, args, &stdout, &stderr)
 	require.NoError(t, err)
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, "Chain 2 from zipped directory\nArgs: end --halt\n", stdout.String())

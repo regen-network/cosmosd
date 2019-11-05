@@ -12,40 +12,41 @@ import (
 
 // LaunchProcess runs a subprocess and returns when the subprocess exits,
 // either when it dies, or *after* a successful upgrade.
-func LaunchProcess(cfg *Config, args []string, stdout, stderr io.Writer) error {
+func LaunchProcess(cfg *Config, args []string, stdout, stderr io.Writer) (bool, error) {
 	bin := cfg.CurrentBin()
+
 	err := EnsureBinary(bin)
 	if err != nil {
-		return errors.Wrap(err, "current binary invalid")
+		return false, errors.Wrap(err, "current binary invalid")
 	}
 
 	cmd := exec.Command(bin, args...)
 	outpipe, err := cmd.StdoutPipe()
 	if err != nil {
-		return err
+		return false, err
 	}
 	errpipe, err := cmd.StderrPipe()
 	if err != nil {
-		return err
+		return false, err
 	}
 	scanOut := bufio.NewScanner(io.TeeReader(outpipe, stdout))
 	scanErr := bufio.NewScanner(io.TeeReader(errpipe, stderr))
 
 	err = cmd.Start()
 	if err != nil {
-		return errors.Wrapf(err, "launching process %s %s", bin, strings.Join(args, " "))
+		return false, errors.Wrapf(err, "launching process %s %s", bin, strings.Join(args, " "))
 	}
 
 	// three ways to exit - command ends, find regexp in scanOut, find regexp in scanErr
 	upgradeInfo, err := WaitForUpgradeOrExit(cmd, scanOut, scanErr)
 	if err != nil {
-		return err
+		return false, err
 	}
 	if upgradeInfo != nil {
-		return DoUpgrade(cfg, upgradeInfo)
+		return true, DoUpgrade(cfg, upgradeInfo)
 	}
 
-	return nil
+	return false, nil
 }
 
 // WaitResult is used to wrap feedback on cmd state with some mutex logic.

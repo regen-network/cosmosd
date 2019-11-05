@@ -44,28 +44,44 @@ func (cfg *Config) UpgradeDir(upgradeName string) string {
 	return filepath.Join(cfg.Root(), upgradesDir, safeName)
 }
 
+// Symlink to genesis
+func (cfg *Config) SymLinkToGenesis() (string, error) {
+	genesis := filepath.Join(cfg.Root(), genesisDir)
+	link := filepath.Join(cfg.Root(), currentLink)
+
+	if err := os.Symlink(genesis, link); err != nil {
+		return "", err
+	}
+	// and return the genesis binary
+	return cfg.GenesisBin(), nil
+}
+
 // CurrentBin is the path to the currently selected binary (genesis if no link is set)
 // This will resolve the symlink to the underlying directory to make it easier to debug
-func (cfg *Config) CurrentBin() string {
+func (cfg *Config) CurrentBin() (string, error) {
 	cur := filepath.Join(cfg.Root(), currentLink)
 	// if nothing here, fallback to genesis
 	info, err := os.Lstat(cur)
 	if err != nil {
-		return cfg.GenesisBin()
+		//Create symlink to the genesis
+		return cfg.SymLinkToGenesis()
 	}
 	// if it is there, ensure it is a symlink
 	if info.Mode()&os.ModeSymlink == 0 {
-		return cfg.GenesisBin()
+		//Create symlink to the genesis
+		return cfg.SymLinkToGenesis()
 	}
 
 	// resolve it
 	dest, err := os.Readlink(cur)
 	if err != nil {
-		return cfg.GenesisBin()
+		//Create symlink to the genesis
+		return cfg.SymLinkToGenesis()
 	}
 
 	// and return the binary
-	return filepath.Join(dest, "bin", cfg.Name)
+	dest = filepath.Join(dest, "bin", cfg.Name)
+	return dest, nil
 }
 
 // GetConfigFromEnv will read the environmental variables into a config

@@ -14,15 +14,39 @@ func TestWaitForInfo(t *testing.T) {
 		expectUpgrade *UpgradeInfo
 		expectErr     bool
 	}{
-		"no info": {
+		"no match": {
 			write: []string{"some", "random\ninfo\n"},
 		},
-		"simple match": {
-			write: []string{"first line\n", `UPGRADE "myname" NEEDED at height 123: http://example.com`, "\nnext line\n"},
+		"match height with no info": {
+			write: []string{"first line\n", `UPGRADE "myname" NEEDED at height: 123: \n`, "next line\n"},
 			expectUpgrade: &UpgradeInfo{
 				Name:   "myname",
 				Height: 123,
-				Info:   "http://example.com",
+				Info:   "",
+			},
+		},
+		"match height with info": {
+			write: []string{"first line\n", `UPGRADE "take2" NEEDED at height: 123: Download data here!\n`, "next line\n"},
+			expectUpgrade: &UpgradeInfo{
+				Name:   "take2",
+				Height: 123,
+				Info:   "Download data here!",
+			},
+		},
+		"match time with no info": {
+			write: []string{"first line\n", `UPGRADE "timer" NEEDED at time: 2020-04-01T11:22:33Z: \n`, "next line\n"},
+			expectUpgrade: &UpgradeInfo{
+				Name: "myname",
+				Time: "2020-04-01T11:22:33Z",
+				Info: "",
+			},
+		},
+		"match time with info": {
+			write: []string{"first line\n", `UPGRADE "timer" NEEDED at time: 2020-04-01T11:22:33Z: https://april.foo.rs/hahaha `, "\nnext line\n"},
+			expectUpgrade: &UpgradeInfo{
+				Name: "myname",
+				Time: "2020-04-01T11:22:33Z",
+				Info: "https://april.foo.rs/hahaha ",
 			},
 		},
 		"chunks": {

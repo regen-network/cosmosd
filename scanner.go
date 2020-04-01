@@ -17,7 +17,7 @@ import (
 //      return fmt.Sprintf("time: %s", p.Time.UTC().Format(time.RFC3339))
 //    }
 //    return fmt.Sprintf("height: %d", p.Height)
-var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at height (\d+):\s+([^\s]*)`)
+var upgradeRegex = regexp.MustCompile(`UPGRADE "(.*)" NEEDED at ((height): (\d+)|(time): (\S+)):\s+(\S*)`)
 
 // UpgradeInfo is the details from the regexp
 type UpgradeInfo struct {
@@ -37,14 +37,22 @@ func WaitForUpdate(scanner *bufio.Scanner) (*UpgradeInfo, error) {
 		line := scanner.Text()
 		if upgradeRegex.MatchString(line) {
 			subs := upgradeRegex.FindStringSubmatch(line)
-			h, err := strconv.Atoi(subs[2])
-			if err != nil {
-				return nil, errors.Wrap(err, "parse number from regexp")
-			}
 			info := UpgradeInfo{
-				Name:   subs[1],
-				Height: h,
-				Info:   subs[3],
+				Name: subs[1],
+				Info: subs[7],
+			}
+			var err error
+			if subs[3] != "" {
+				// match height
+				info.Height, err = strconv.Atoi(subs[4])
+				if err != nil {
+					return nil, errors.Wrap(err, "parse number from regexp")
+				}
+			} else if subs[5] != "" {
+				// match time
+				// TODO: parse time
+				info.Time = subs[6]
+
 			}
 			return &info, nil
 		}

@@ -1,3 +1,5 @@
+**`cosmosd` has been [incorporated into the Cosmos SDK](https://github.com/cosmos/cosmos-sdk/pull/6820) and renamed `cosmovisor`, see: https://github.com/cosmos/cosmos-sdk/tree/master/cosmovisor**
+
 # Cosmos Upgrade Manager
 
 [![CircleCI](https://circleci.com/gh/regen-network/cosmos-upgrade-manager/tree/master.svg?style=svg)](https://circleci.com/gh/regen-network/cosmos-upgrade-manager/tree/master) [![codecov](https://codecov.io/gh/regen-network/cosmos-upgrade-manager/branch/master/graph/badge.svg)](https://codecov.io/gh/regen-network/cosmos-upgrade-manager)
